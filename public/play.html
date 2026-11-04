@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#0d0a20">
+<title>Oẳn Tù Tì Sinh Tử</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { min-height: 100dvh; }
+  #app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; min-height: 100dvh;
+    padding: 0 16px max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
+  .screen { flex: 1; display: flex; flex-direction: column; gap: 14px; animation: fadeUp .35s ease both; min-width: 0; }
+  .main, .aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .main { flex: 1; }
+  .center { align-items: center; justify-content: center; text-align: center; }
+  .card { background: linear-gradient(180deg, rgba(36,28,92,.92), rgba(26,20,71,.92)); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .card.hero { text-align: center; display: grid; gap: 8px; justify-items: center; padding: 22px 18px; }
+  h2 { font-family: var(--display); font-weight: 800; margin: 0; font-size: 1.6rem; line-height: 1.1; }
+  .eyebrow { font-weight: 700; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  label.lb { display: block; font-weight: 700; font-size: .78rem; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .07em; }
+  input.txt { width: 100%; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--line); background: var(--sunk); font-size: 1.15rem; font-weight: 600; outline: none; transition: border-color .2s; }
+  input.txt:focus { border-color: var(--gold); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 2px solid var(--line); background: var(--sunk); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .15s; }
+  .chip.on { background: var(--gold); color: #1a1033; border-color: var(--gold); }
+  .avatars { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+  .av { aspect-ratio: 1; min-width: 0; padding: 0; border-radius: 12px; border: 2px solid transparent; background: var(--sunk); font-size: clamp(1.1rem, 5.5vw, 1.5rem); cursor: pointer; display: grid; place-items: center; transition: transform .15s; }
+  .av.on { border-color: var(--gold); background: #3a2f86; transform: scale(1.08); }
+  .err { color: var(--rock); font-weight: 700; min-height: 1.2em; text-align: center; }
+
+  /* thanh trên cùng */
+  .topbar { position: sticky; top: 0; z-index: 20; margin: 0 -16px; padding: max(12px, env(safe-area-inset-top)) 16px 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: linear-gradient(180deg, rgba(13,10,32,.96) 60%, rgba(13,10,32,0)); backdrop-filter: blur(6px); }
+  .topbar .who { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 700; }
+  .topbar .who .avatar { width: 34px; height: 34px; font-size: 1.15rem; }
+  .topbar .who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill { display: inline-flex; align-items: baseline; gap: 4px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.07); font-weight: 700; font-size: .82rem; color: var(--muted); white-space: nowrap; }
+  .pill b { font-family: var(--display); font-size: 1.15rem; color: var(--win); line-height: 1; }
+  .bo { display: inline-block; margin-left: 4px; padding: .05em .45em; border-radius: 7px; background: rgba(26,16,51,.3); font-size: .85em; }
+
+  /* lộ trình */
+  .pathbar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -4px -16px 0; padding: 0 16px 2px; }
+  .pathbar::-webkit-scrollbar { display: none; }
+  .pc { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 10px; font-size: .75rem; font-weight: 700; background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid transparent; }
+  .pc.ok { color: var(--win); }
+  .pc.x { color: var(--lose); }
+  .pc.cur { background: var(--gold); color: #1a1033; }
+  .pc .bo2 { opacity: .7; font-size: .9em; }
+
+  .vs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 8px; }
+  .fighter { text-align: center; min-width: 0; }
+  .fighter .avatar { width: 72px; height: 72px; font-size: 2.4rem; }
+  .fighter .nm { font-family: var(--display); font-weight: 800; font-size: 1.12rem; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fighter .dp { font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vsx { font-family: var(--display); font-weight: 800; font-size: 1.7rem; color: var(--gold); text-shadow: 0 3px 0 #8a2b00; transform: rotate(-6deg); }
+
+  .picks { display: grid; gap: 12px; margin-top: auto; }
+  .pick { display: flex; align-items: center; gap: 14px; padding: 14px 20px; font-size: 1.6rem; text-align: left; border-radius: 22px; }
+  .pick .e { font-size: 2.6rem; width: 56px; text-align: center; filter: drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+  .pick small { display: block; font-family: var(--body); font-size: .8rem; font-weight: 600; opacity: .7; }
+
+  .banner { border-radius: 16px; padding: 10px 14px; font-weight: 700; text-align: center; font-size: .92rem; }
+  .banner.gold { background: rgba(255,210,63,.12); color: var(--gold); border: 1px dashed rgba(255,210,63,.7); }
+  .banner.boss { background: rgba(138,143,255,.15); color: #cfd1ff; border: 1px dashed var(--boss); }
+  .banner.green { background: rgba(77,255,154,.1); color: #b3ffd4; border: 1px dashed var(--win); }
+
+  .chosen { font-size: 7rem; line-height: 1; animation: pop .4s ease both, floaty 2s 0.4s ease-in-out infinite; }
+  .clash { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; width: 100%; }
+  .clash .side { text-align: center; min-width: 0; }
+  .clash .big { font-size: 5.5rem; line-height: 1; display: inline-block; }
+  .clash .side.l .big { animation: inL .45s cubic-bezier(.2,1.4,.4,1) both; }
+  .clash .side.r .big { animation: inR .45s cubic-bezier(.2,1.4,.4,1) both; }
+  .clash .who { font-weight: 700; font-size: .85rem; color: var(--muted); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .verdict { font-family: var(--display); font-weight: 800; font-size: 2.5rem; line-height: 1.05; text-align: center; animation: pop .5s .35s ease both; }
+  .verdict.win { color: var(--win); text-shadow: 0 0 30px rgba(77,255,154,.4); }
+  .verdict.lose { color: var(--lose); }
+  .verdict.tie { color: var(--gold); }
+  .sub { text-align: center; color: var(--muted); font-weight: 600; animation: fadeUp .4s .6s both; }
+
+  .score { display: flex; justify-content: center; gap: 18px; align-items: center; font-family: var(--display); font-weight: 800; }
+  .score .num { font-size: 2.1rem; line-height: 1; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.15); }
+  .dots i.on { background: var(--gold); box-shadow: 0 0 12px var(--gold); }
+
+  .bigicon { font-size: 4.2rem; line-height: 1; animation: pop .5s both; }
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width: 100%; }
+  .stat { background: var(--sunk); border-radius: 16px; padding: 12px 6px; text-align: center; }
+  .stat b { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+  .stat span { font-size: .72rem; color: var(--muted); font-weight: 600; }
+  .idol { display: flex; align-items: center; gap: 12px; text-align: left; }
+  .idol .avatar { width: 52px; height: 52px; font-size: 1.8rem; }
+
+  /* sơ đồ trên điện thoại */
+  .bk-card { padding: 16px 0 12px; }
+  .bk-card .hd { padding: 0 16px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .bk-card .hd b { font-family: var(--display); font-size: 1.1rem; }
+  .bk-card .follow { padding: 6px 16px 0; font-size: .82rem; color: var(--muted); font-weight: 600; }
+  .bk-card .follow b { color: var(--gold); }
+  .prog { height: 6px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; margin: 10px 16px 4px; }
+  .prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--paper), var(--win)); border-radius: 99px; transition: width .4s; }
+  .bkscroll { overflow-x: auto; padding: 8px 16px 6px; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent; --bcw: 152px; --bgap: 22px; --mrh: 28px; --mfs: 12.5px; }
+  .bkscroll .bk { width: max-content; }
+  .bk-hint { padding: 2px 16px 0; font-size: .74rem; color: var(--muted); }
+
+  .survivors { display: flex; flex-wrap: wrap; gap: 6px; max-height: 42vh; overflow-y: auto; }
+  .sv { display: inline-flex; align-items: center; gap: 4px; background: var(--sunk); border-radius: 999px; padding: 4px 10px 4px 6px; font-size: .82rem; font-weight: 600; }
+  .sv.me { background: var(--gold); color: #1a1033; }
+
+  details.rules summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; }
+  details.rules summary::-webkit-details-marker { display: none; }
+  details.rules summary::after { content: '＋'; color: var(--gold); }
+  details.rules[open] summary::after { content: '－'; }
+  .rules h5 { margin: 14px 0 6px; font-family: var(--display); font-size: 1.05rem; color: var(--gold); }
+  .rules ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: #d9d4ff; font-size: .9rem; line-height: 1.45; }
+  .conn { position: fixed; top: 0; left: 0; right: 0; background: var(--rock); color: #fff; text-align: center; font-weight: 700; padding: 6px; z-index: 60; font-size: .85rem; }
+
+  /* máy tính: 2 cột */
+  @media (min-width: 900px) {
+    #app { max-width: 1360px; padding: 0 32px 32px; }
+    .topbar { margin: 0; padding: 18px 0 12px; background: transparent; backdrop-filter: none; }
+    .pathbar { margin: -4px 0 0; padding: 0; }
+    .screen.two { display: grid; grid-template-columns: 430px minmax(0, 1fr); align-items: start; gap: 20px; }
+    .screen.two > .topbar, .screen.two > .pathbar { grid-column: 1 / -1; }
+    .screen.two .main { min-height: calc(100dvh - 150px); }
+    .screen.two .aside { position: sticky; top: 76px; }
+    .screen.two .bkscroll { --bcw: 150px; --bgap: 22px; --mrh: 30px; --mfs: 13px; }
+    .screen.solo { max-width: 480px; margin: 0 auto; width: 100%; }
+    .screen.two .bk-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="conn" class="conn hidden">Mất kết nối… đang kết nối lại</div>
+<div id="app"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/bracket.js"></script>
+<script>
+const HANDS = {
+  rock: { e: '✊', name: 'Búa', hint: 'thắng Kéo' },
+  paper: { e: '✋', name: 'Bao', hint: 'thắng Búa' },
+  scissors: { e: '✌️', name: 'Kéo', hint: 'thắng Bao' },
+};
+const AVATARS = ['🦊','🐼','🐯','🐸','🐵','🦁','🐨','🐷','🐙','🦄','🐝','🐲','🦖','🐧','🦉','🐳'];
+const BOSS = { avatar: '🤖', name: 'BOSS', dept: 'Máy chủ vô tình' };
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} }, del(k) { try { localStorage.removeItem(k); } catch {} } };
+
+let S = null, offset = 0, pid = store.get('ott_pid'), lastKey = '', cfg = { departments: [] }, SV = null, joinErr = '';
+const form = { name: store.get('ott_name') || '', dept: store.get('ott_dept') || '', avatar: store.get('ott_av') || AVATARS[(Math.random() * AVATARS.length) | 0] };
+
+const socket = io({ transports: ['websocket', 'polling'] });
+socket.on('connect', () => {
+  document.getElementById('conn').classList.add('hidden');
+  if (pid) socket.emit('join', { pid }, r => { if (!r.ok) { pid = null; store.del('ott_pid'); lastKey = ''; render(); } });
+});
+socket.on('disconnect', () => document.getElementById('conn').classList.remove('hidden'));
+socket.on('state', s => { S = s; offset = s.serverNow - Date.now(); if (s.phase === 'lobby') SV = null; render(); });
+socket.on('survivors', d => { SV = d; lastKey = ''; render(); });
+socket.on('cleared', () => { pid = null; S = null; SV = null; store.del('ott_pid'); lastKey = ''; render(); });
+fetch('/config.json').then(r => r.json()).then(c => { cfg = c; if (!pid) { lastKey = ''; render(); } }).catch(() => {});
+
+// ---------- Vẽ ----------
+let firstBk = true;
+function render() {
+  let html, key;
+  if (!pid || !S) { key = 'join:' + cfg.departments.length + ':' + !!pid; if (key === lastKey) return; html = pid ? loading() : joinScreen(); }
+  else { key = JSON.stringify({ ...S, serverNow: 0 }) + (SV ? SV.round : ''); if (key === lastKey) return; html = gameScreen(); }
+  const bkPrev = document.querySelector('.bkscroll');
+  const keep = bkPrev && bkPrev.dataset.k === (S?.bracket ? S.bracket.cols[0].r + ':' + S.bracket.cols[0].from : '') ? bkPrev.scrollLeft : null;
+  lastKey = key;
+  $app.innerHTML = html;
+  bind();
+  const bk = document.querySelector('.bkscroll');
+  if (bk) {
+    bk.style.scrollBehavior = 'auto';
+    if (keep != null) bk.scrollLeft = keep;
+    else { const m = bk.querySelector('.mc.mine') || bk.querySelector('.mc.live'); if (m) { const c = m.closest('.bk-col'); bk.scrollLeft = Math.max(0, c.offsetLeft - 16); } }
+    bk.style.scrollBehavior = '';
+  }
+  const cur = document.querySelector('.pathbar .pc.cur');
+  if (cur) cur.parentElement.scrollLeft = cur.offsetLeft - 40;
+}
+const loading = () => `<div class="screen center"><div class="bigicon">✊</div><p class="muted">Đang vào đấu trường…</p></div>`;
+const layout = (main, aside, head = true) => `<div class="screen ${aside ? 'two' : 'solo'}">${head ? topbar() + pathBar() : ''}<div class="main">${main}</div>${aside ? `<div class="aside">${aside}</div>` : ''}</div>`;
+
+function joinScreen() {
+  return `<div class="screen solo" style="padding-top:max(20px,env(safe-area-inset-top))">
+    <div class="logo" style="font-size:2.6rem;margin:6px 0 4px"><span class="hands">✊ ✋ ✌️</span><span class="l1">OẲN TÙ TÌ</span><span class="l2">SINH TỬ</span></div>
+    <div class="card" style="display:grid;gap:18px;grid-template-columns:minmax(0,1fr)">
+      <div><label class="lb" for="nm">Account của bạn</label>
+        <input id="nm" class="txt" maxlength="20" placeholder="VD: NamNN10" value="${esc(form.name)}" autocomplete="off"></div>
+      <div><label class="lb">BU</label>
+        <div class="chips" id="depts">${cfg.departments.map(d => `<button class="chip ${d === form.dept ? 'on' : ''}" data-d="${esc(d)}">${esc(d)}</button>`).join('')}</div></div>
+      <div><label class="lb">Chọn linh vật</label>
+        <div class="avatars" id="avs">${AVATARS.map(a => `<button class="av ${a === form.avatar ? 'on' : ''}" data-a="${a}" aria-label="Linh vật ${a}">${a}</button>`).join('')}</div></div>
+    </div>
+    <div class="err" id="err">${esc(joinErr)}</div>
+    <button class="btn block" id="go" style="margin-top:auto">ĐĂNG KÝ THI ĐẤU ⚔️</button>
+  </div>`;
+}
+
+function topbar() {
+  const s = S;
+  const inGame = s.roundLabel && !['lobby', 'ready', 'champion'].includes(s.phase);
+  const left = inGame
+    ? `<span class="mode-badge ${s.type === 'boss' ? 'boss' : ''}">${s.type === 'boss' ? '🤖 ' : '⚔️ '}${esc(s.roundLabel)}${s.type === 'duel' && s.score && s.role === 'duel' && s.score.need > 1 ? `<span class="bo">${s.score.bo}</span>` : ''}</span>`
+    : `<span class="who"><span class="avatar">${s.me.avatar}</span><span>${esc(s.me.name)}</span></span>`;
+  return `<div class="topbar">${left}<span class="pill">${s.phase === 'lobby' ? `<b style="color:var(--text)">${s.total}</b> đã đăng ký` : `Còn <b>${s.aliveCount}</b>/${s.total}`}</span></div>`;
+}
+
+function pathBar() {
+  const s = S;
+  if (!s.tpath || s.phase === 'lobby') return '';
+  return `<div class="pathbar">${s.tpath.map((p, i) => {
+    const ok = i < s.reach && (s.me.alive || i < s.reach);
+    const x = !s.me.alive && i === s.reach;
+    return `<span class="pc ${p.cur ? 'cur' : ''} ${ok ? 'ok' : ''} ${x ? 'x' : ''}">${ok ? '✓ ' : x ? '✗ ' : ''}${esc(p.name)}${p.bo !== 'BO1' ? ` <span class="bo2">${p.bo}</span>` : ''}</span>`;
+  }).join('')}<span class="pc ${s.phase === 'champion' ? 'cur' : ''}">🏆</span></div>`;
+}
+
+function ring(size = 96) {
+  const r = size / 2 - 8, c = 2 * Math.PI * r;
+  return `<div class="ring" id="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle class="track" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="10"/><circle class="bar" id="ringbar" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="10" stroke-dasharray="${c}" stroke-dashoffset="0" data-c="${c}"/></svg><span class="num" id="ringnum" style="font-size:${size*0.36}px">…</span></div>`;
+}
+const fighter = (p, label) => `<div class="fighter"><div class="avatar">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="dp">${esc(label || p.dept || '')}</div></div>`;
+const dots = (n, need) => Array.from({ length: need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
+const scoreBar = (me, op, need) => need > 1 ? `<div class="score"><div class="dots">${dots(me, need)}</div><span class="num">${me} – ${op}</span><div class="dots">${dots(op, need)}</div></div>` : '';
+
+function gameScreen() {
+  const s = S;
+  if (s.phase === 'lobby') return lobby();
+  if (s.phase === 'ready') return ready();
+  if (s.phase === 'champion') return champion();
+  if (s.phase === 'reveal' && s.inStep && s.last) return reveal();
+  if (s.phase === 'choosing' && (s.role === 'duel' || s.role === 'boss')) return choosing();
+  if (!s.me.alive) return outScreen();
+  if (s.phase === 'roundEnd') return roundEnd();
+  return waiting();
+}
+
+function rulesCard(open) {
+  return `<details class="card rules" ${open ? 'open' : ''}><summary>📜 Luật chơi</summary>
+    <h5>⚔️ Đấu Tay Đôi</h5><ul>
+      <li>Chốt danh sách xong, hệ thống bốc thăm chia cặp ngẫu nhiên thành sơ đồ loại trực tiếp.</li>
+      <li>Thắng thì vào vòng tiếp theo, thua thì bị loại. Đấu xong bạn xem được sơ đồ trong lúc chờ các cặp khác.</li>
+      <li>Các vòng đầu đấu 1 ván. <b style="color:var(--gold)">Bán kết BO3</b> (thắng 2 ván), <b style="color:var(--gold)">Chung kết BO5</b> (thắng 3 ván).</li>
+      <li>Hòa thì đấu lại; hòa 3 lần liên tiếp thì Thần May Mắn 🍀 tung đồng xu.</li>
+    </ul>
+    <h5>🤖 Đại Chiến Boss</h5><ul>
+      <li>Cả hội trường cùng đấu với Boss mỗi vòng. Thua Boss là bị loại, hòa vẫn sống.</li>
+      <li>Đấu liên tục đến khi chỉ còn 1 người. Nếu tất cả cùng thua, Boss tha và đấu lại.</li>
+    </ul>
+    <h5>Chung</h5><ul>
+      <li>Hết giờ chưa chọn thì máy chọn bừa giùm.</li>
+      <li>Bị loại thì bạn thành fan của người đã hạ mình. Thần tượng vô địch, cả fan club được vinh danh!</li>
+    </ul></details>`;
+}
+
+function lobby() {
+  const s = S;
+  return layout(`
+    <div class="card hero">
+      <div class="avatar" style="width:96px;height:96px;font-size:3.2rem;animation:floaty 2.4s infinite ease-in-out">${s.me.avatar}</div>
+      <h2>${esc(s.me.name)}</h2><span class="tag">${esc(s.me.dept)}</span>
+      <p class="muted" style="margin:4px 0 0">Đăng ký thành công! Chờ MC chốt danh sách và bắt đầu.</p>
+    </div>
+    <button class="btn ghost block" id="leave" style="margin-top:auto;font-size:1rem">Đổi tên / linh vật</button>`,
+    rulesCard(true));
+}
+
+function bracketCard(title) {
+  const s = S, b = s.bracket;
+  if (s.type !== 'duel' || !b) return '';
+  const p = s.roundProgress;
+  const maxSlots = Math.max(...b.cols.map(c => c.matches.length));
+  const o = { me: s.me.id, focus: b.focus, champCol: b.hasFinal, champ: b.champ };
+  return `<div class="card bk-card">
+    <div class="hd"><b>🗺️ ${title || 'Sơ đồ thi đấu'}</b>${p && !['ready', 'champion'].includes(s.phase) ? `<span class="muted" style="font-size:.78rem;font-weight:700">${esc(s.roundLabel)}: ${p.done}/${p.total} cặp xong</span>` : ''}</div>
+    ${b.following ? `<div class="follow">Đang theo dõi nhánh của thần tượng <b>${b.following.avatar} ${esc(b.following.name)}</b></div>` : ''}
+    ${p && !['ready', 'champion', 'roundEnd'].includes(s.phase) ? `<div class="prog"><i style="width:${p.total ? p.done / p.total * 100 : 0}%"></i></div>` : ''}
+    <div class="bkscroll" data-k="${b.cols[0].r}:${b.cols[0].from}"><div style="height:calc(${maxSlots} * (var(--mrh) * 2 + 10px) + 34px);display:flex">${Bracket.linear(b.cols, o)}</div></div>
+    ${b.cols.length > 2 ? `<div class="bk-hint">← Vuốt ngang để xem các vòng sau</div>` : ''}
+  </div>`;
+}
+
+function ready() {
+  const s = S;
+  if (s.type === 'boss') return layout(`<div class="screen center">
+    <div class="bigicon" style="font-size:5rem;animation:shake 1.2s infinite">🤖</div><h2>ĐẠI CHIẾN BOSS</h2>
+    <div class="banner boss">Bạn và ${s.total - 1} người khác cùng đấu với Boss. Thua Boss là bị loại, hòa vẫn sống. Ai trụ lại cuối cùng sẽ vô địch!</div>
+    <p class="muted">Nhìn lên màn hình lớn, MC sắp bắt đầu…</p></div>`, '');
+  const opp = s.opponent;
+  return layout(`<div class="card hero">
+      <div class="eyebrow">Kết quả bốc thăm · Vòng 1</div>
+      ${s.byeR1 ? `<div class="bigicon">🎟️</div><h2>VÉ VỚT!</h2><p class="muted" style="margin:0">Bạn được đi thẳng vào vòng 2 mà không cần đấu vòng 1.</p>`
+        : `<div class="vs" style="width:100%;margin-top:6px">${fighter(s.me, 'Bạn')}<div class="vsx">VS</div>${opp ? fighter(opp) : fighter({ avatar: '❔', name: 'Chờ…' })}</div>`}
+    </div>
+    <div class="banner gold">Nhìn lên màn hình lớn, MC sắp bắt đầu vòng 1!</div>`, bracketCard());
+}
+
+function picks() {
+  return `<div class="picks">${Object.entries(HANDS).map(([k, h]) => `<button class="btn pick c-${k}" data-h="${k}"><span class="e">${h.e}</span><span>${h.name}<small>${h.hint}</small></span></button>`).join('')}</div>`;
+}
+
+function choosing() {
+  const s = S;
+  const boss = s.role === 'boss';
+  const opp = boss ? BOSS : s.opponent;
+  let head = '';
+  if (s.last && s.step > 0 && !boss) {
+    head = s.last.outcome === 'tie'
+      ? `<div class="banner gold">⚡ HÒA! Cả hai cùng ra ${HANDS[s.last.my]?.e || ''} — đấu lại!</div>`
+      : `<div class="banner ${s.last.outcome === 'win' ? 'green' : 'gold'}">${s.last.outcome === 'win' ? '✅ Bạn thắng ván vừa rồi!' : '😬 Bạn thua ván vừa rồi — gỡ lại nào!'}</div>`;
+  }
+  if (boss) head = `<div class="banner boss">Đánh bại hoặc hòa Boss để sống sót. Thua là bị loại!</div>`;
+  const sc = !boss && s.score ? scoreBar(s.score.me, s.score.opp, s.score.need) : '';
+  const body = s.choice
+    ? `<div class="screen center"><div class="chosen">${HANDS[s.choice].e}</div><h2>Đã chọn ${HANDS[s.choice].name}!</h2><p class="muted">Giữ bí mật nhé… đang chờ ${boss ? 'cả hội trường' : 'đối thủ'} 🤫</p></div>`
+    : picks();
+  return layout(`${head}
+    <div class="vs">${fighter(s.me, 'Bạn')}<div style="display:grid;place-items:center">${ring(96)}</div>${fighter(opp)}</div>
+    ${sc}${body}`, '');
+}
+
+function verdictOf(l) {
+  const o = l.outcome;
+  if (l.boss) {
+    if (o === 'win') return ['win', 'HẠ GỤC BOSS! 💪', 'Bạn sống sót qua vòng này.'];
+    if (o === 'tie') return ['tie', 'HÒA BOSS 😮‍💨', 'Thoát chết trong gang tấc — bạn vẫn sống!'];
+    if (o === 'mercy') return ['tie', 'BOSS THA MẠNG 🙏', 'Tất cả đều thua nên không ai bị loại. Đấu lại!'];
+    return ['lose', 'BOSS TIỄN BẠN 🤖', 'Bạn đã bị loại. Ở lại xem ai là người cuối cùng nhé!'];
+  }
+  if (l.matchOver) {
+    if (l.matchWon) return ['win', l.luck ? 'THẦN MAY MẮN 🍀' : 'CHIẾN THẮNG! 🎉', l.need > 1 ? `Thắng chung cuộc ${l.me}–${l.op}. Bạn đi tiếp!` : 'Bạn đi tiếp vào vòng sau.'];
+    return ['lose', l.luck ? 'XUI QUÁ 🪙' : 'BỊ LOẠI 💀', l.need > 1 ? `Thua chung cuộc ${l.me}–${l.op}. Giờ bạn là fan cứng của đối thủ!` : 'Giờ bạn là fan cứng của đối thủ — cổ vũ hết mình nhé!'];
+  }
+  if (o === 'tie') return ['tie', 'HÒA! ⚡', 'Chuẩn bị đấu lại…'];
+  if (o === 'win') return ['win', 'THẮNG VÁN NÀY! 👊', `Tỉ số ${l.me}–${l.op}. Cần ${l.need} ván để thắng trận.`];
+  return ['lose', 'THUA VÁN NÀY 😬', `Tỉ số ${l.me}–${l.op}. Vẫn còn cơ hội!`];
+}
+
+function reveal() {
+  const s = S, l = s.last;
+  const opp = l.boss ? BOSS : s.opponent;
+  const [cls, title, sub] = verdictOf(l);
+  if (cls === 'win') setTimeout(confetti, 450);
+  return layout(`<div class="screen center" style="gap:22px">
+      <div class="clash">
+        <div class="side l"><div class="big">${HANDS[l.my].e}</div><div class="who">Bạn${l.auto ? ' · máy chọn hộ' : ''}</div></div>
+        <div class="side r"><div class="big">${HANDS[l.opp].e}</div><div class="who">${esc(opp?.name || '')}${l.oppAuto ? ' · máy chọn hộ' : ''}</div></div>
+      </div>
+      ${!l.boss ? scoreBar(l.me, l.op, l.need) : ''}
+      <div class="verdict ${cls}">${title}</div>
+      <div class="sub">${sub}</div>
+    </div>`, '');
+}
+
+function survivorsHtml() {
+  if (!SV) return '';
+  return `<div class="card" style="width:100%;text-align:left">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><b style="font-family:var(--display);font-size:1.1rem">👥 Còn lại sau vòng ${SV.round}</b><span class="pill"><b>${SV.list.length}</b> người</span></div>
+    <div class="survivors">${SV.list.map(([n, a]) => `<span class="sv ${n === S.me.name && S.me.alive ? 'me' : ''}">${a} ${esc(n)}</span>`).join('')}</div></div>`;
+}
+
+function waiting() {
+  const s = S;
+  const won = s.last && s.last.matchWon;
+  const bye = s.byeR1 && s.roundNo === 1;
+  return layout(`<div class="card hero">
+      <div class="bigicon">${won ? '😎' : bye ? '🎟️' : '⏳'}</div>
+      <h2>${won ? `Bạn đã vào ${esc(s.nextRound || 'vòng sau')}!` : bye ? 'Bạn có vé vớt vòng này' : 'Đang chờ…'}</h2>
+      <p class="muted" style="margin:0">Các cặp khác vẫn đang thi đấu. Xem sơ đồ để biết đối thủ tiếp theo của bạn!</p>
+      ${s.roundProgress ? `<div class="prog" style="width:100%;margin:8px 0 0"><i style="width:${s.roundProgress.done / s.roundProgress.total * 100}%"></i></div><div class="muted" style="font-size:.8rem;font-weight:700">${s.roundProgress.done}/${s.roundProgress.total} cặp đã xong</div>` : ''}
+    </div>`, bracketCard());
+}
+
+function roundEnd() {
+  const s = S;
+  if (s.type === 'boss') return layout(`<div class="card hero">
+      <div class="bigicon">🛡️</div><h2>BẠN VẪN CÒN SỐNG!</h2>
+      <p class="muted" style="margin:0">Còn <b style="color:var(--win)">${s.aliveCount}</b> người trụ lại. ${s.nextAt ? `Vòng tiếp theo sau <b id="nextc">…</b> giây` : 'Chờ MC bắt đầu vòng tiếp theo…'}</p>
+    </div>`, survivorsHtml());
+  const opp = s.opponent;
+  return layout(`<div class="card hero">
+      <div class="eyebrow">Trận tiếp theo · ${esc(s.nextRound)} ${s.score && s.score.need > 1 ? '· ' + s.score.bo : ''}</div>
+      <div class="vs" style="width:100%;margin-top:6px">${fighter(s.me, 'Bạn')}<div class="vsx">VS</div>${opp ? fighter(opp) : fighter({ avatar: '❔', name: 'Chờ…' })}</div>
+    </div>
+    ${s.nextRound === 'Chung Kết' || s.nextRound === 'Bán Kết' ? `<div class="banner gold">🎤 Bạn đã vào ${esc(s.nextRound)}! Mời lên sân khấu!</div>` : ''}`, bracketCard());
+}
+
+function fanCard() {
+  const s = S;
+  if (s.type === 'boss' || (!s.killer && !s.idol)) return '';
+  return `<div class="card" style="display:grid;gap:12px;text-align:left">
+    ${s.killer ? `<div class="muted" style="font-size:.9rem">Bạn đã bị hạ bởi <b style="color:var(--text)">${s.killer.avatar} ${esc(s.killer.name)}</b></div>` : ''}
+    ${s.idol ? `<div class="idol"><div class="avatar">${s.idol.avatar}</div><div><div class="eyebrow">Thần tượng hiện tại</div><div style="font-family:var(--display);font-weight:800;font-size:1.35rem">${esc(s.idol.name)}</div><div class="muted" style="font-size:.85rem">Cổ vũ hết mình! Thần tượng vô địch thì bạn cũng được vinh danh 🏆</div></div></div>` : ''}
+  </div>`;
+}
+
+function outScreen() {
+  const s = S;
+  return layout(`<div class="card hero">
+      <div class="bigicon">👻</div><h2>Bạn đã bị loại</h2>
+      <p class="muted" style="margin:0">${s.type === 'boss' ? `Boss đã tiễn bạn. Còn <b style="color:var(--win)">${s.aliveCount}</b> người đang chiến đấu.` : 'Đừng tắt trang — theo dõi sơ đồ và cổ vũ thần tượng của bạn!'}</p>
+    </div>${fanCard()}`, s.type === 'boss' ? survivorsHtml() : bracketCard());
+}
+
+function champion() {
+  const s = S, c = s.champion;
+  const me = c && c.id === s.me.id;
+  if (me || s.championIsIdol) setTimeout(confetti, 200);
+  return layout(`<div class="screen center" style="gap:12px">
+    <div class="bigicon" style="font-size:4rem">👑</div>
+    <div class="avatar" style="width:110px;height:110px;font-size:3.8rem;box-shadow:0 0 0 4px var(--gold),0 0 50px rgba(255,210,63,.5)">${c ? c.avatar : ''}</div>
+    <div class="logo" style="font-size:1.4rem"><span class="l2">${me ? 'BẠN LÀ NHÀ VÔ ĐỊCH!' : 'NHÀ VÔ ĐỊCH'}</span></div>
+    <h2 style="font-size:2rem">${esc(c?.name)}</h2><span class="tag">${esc(c?.dept)}</span>
+    ${!me && s.championIsIdol ? `<div class="banner green">🎉 Thần tượng của bạn đã vô địch! Bạn thuộc fan club chiến thắng!</div>` : ''}
+    ${me ? `<div class="stat-row"><div class="stat"><b>${s.me.wins}</b><span>${s.type === 'boss' ? 'Lần hạ Boss' : 'Trận thắng'}</span></div><div class="stat"><b>${s.total}</b><span>Người tham gia</span></div><div class="stat"><b>${s.myFans}</b><span>Fan hâm mộ</span></div></div>` : ''}
+  </div>`, s.type === 'duel' ? bracketCard('Nhánh đấu cuối cùng') : '');
+}
+
+// ---------- Tương tác ----------
+function bind() {
+  const go = document.getElementById('go');
+  if (go) {
+    const nm = document.getElementById('nm');
+    nm.oninput = () => { form.name = nm.value; };
+    document.querySelectorAll('#depts .chip').forEach(b => b.onclick = () => { form.dept = b.dataset.d; document.querySelectorAll('#depts .chip').forEach(x => x.classList.toggle('on', x === b)); });
+    document.querySelectorAll('#avs .av').forEach(b => b.onclick = () => { form.avatar = b.dataset.a; document.querySelectorAll('#avs .av').forEach(x => x.classList.toggle('on', x === b)); });
+    go.onclick = () => {
+      const err = document.getElementById('err');
+      if (!form.name.trim()) { err.textContent = 'Nhập tên đã nào!'; nm.focus(); return; }
+      if (cfg.departments.length && !form.dept) { err.textContent = 'Chọn BU để cùng thi đua nhé!'; return; }
+      go.disabled = true;
+      socket.emit('join', form, r => {
+        go.disabled = false;
+        if (!r.ok) { joinErr = r.error; err.textContent = r.error; return; }
+        joinErr = '';
+        pid = r.pid; store.set('ott_pid', pid); store.set('ott_name', form.name); store.set('ott_dept', form.dept); store.set('ott_av', form.avatar);
+        lastKey = ''; render();
+      });
+    };
+  }
+  document.querySelectorAll('.pick').forEach(b => b.onclick = () => {
+    const h = b.dataset.h;
+    if (navigator.vibrate) navigator.vibrate(30);
+    socket.emit('choose', h);
+    S = { ...S, choice: h, canChoose: false }; lastKey = ''; render();
+  });
+  const lv = document.getElementById('leave');
+  if (lv) lv.onclick = () => { socket.emit('leave'); pid = null; store.del('ott_pid'); S = null; lastKey = ''; render(); };
+  tick();
+}
+
+function tick() {
+  if (!S) return;
+  const now = Date.now() + offset;
+  const nc = document.getElementById('nextc');
+  if (nc && S.nextAt) nc.textContent = Math.max(0, Math.ceil((S.nextAt - now) / 1000));
+  const bar = document.getElementById('ringbar'), num = document.getElementById('ringnum'), ringEl = document.getElementById('ring');
+  if (!bar) return;
+  const left = Math.max(0, S.deadline - now);
+  bar.style.strokeDashoffset = +bar.dataset.c * (1 - Math.min(1, left / (S.stepMs || 10000)));
+  num.textContent = Math.ceil(left / 1000);
+  ringEl.classList.toggle('urgent', left < 3000);
+}
+setInterval(tick, 200);
+
+function confetti() {
+  const box = document.createElement('div'); box.className = 'confetti';
+  const colors = ['#ffd23f', '#ff5a6e', '#38c6ff', '#b6f23a', '#c77dff'];
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement('i');
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.background = colors[i % colors.length];
+    p.style.animationDuration = 1.6 + Math.random() * 1.6 + 's';
+    p.style.animationDelay = Math.random() * .4 + 's';
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3800);
+}
+
+render();
+</script>
+</body>
+</html>
