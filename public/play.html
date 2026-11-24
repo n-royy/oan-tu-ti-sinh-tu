@@ -36,7 +36,7 @@
   .topbar .who { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 700; }
   .topbar .who .avatar { width: 34px; height: 34px; font-size: 1.15rem; }
   .topbar .who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pill { display: inline-flex; align-items: baseline; gap: 4px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.07); font-weight: 700; font-size: .82rem; color: var(--muted); white-space: nowrap; }
+  .pill { display: inline-flex; align-items: baseline; gap: 4px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.07); font-weight: 700; font-size: .82rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .pill b { font-family: var(--display); font-size: 1.15rem; color: var(--win); line-height: 1; }
   .bo { display: inline-block; margin-left: 4px; padding: .05em .45em; border-radius: 7px; background: rgba(26,16,51,.3); font-size: .85em; }
 
@@ -51,44 +51,47 @@
 
   .vs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 8px; }
   .fighter { text-align: center; min-width: 0; }
-  .fighter .avatar { width: 72px; height: 72px; font-size: 2.4rem; }
-  .fighter .nm { font-family: var(--display); font-weight: 800; font-size: 1.12rem; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .fighter .dp { font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vsx { font-family: var(--display); font-weight: 800; font-size: 1.7rem; color: var(--gold); text-shadow: 0 3px 0 #8a2b00; transform: rotate(-6deg); }
+  .fighter .avatar { width: 64px; height: 64px; font-size: 2.15rem; }
+  .fighter .nm { font-family: var(--display); font-weight: 800; font-size: 1.08rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fighter .dp { font-size: .74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vsx { font-family: var(--display); font-weight: 800; font-size: 1.65rem; color: var(--gold); text-shadow: 0 3px 0 #8a2b00; transform: rotate(-6deg); }
 
-  .picks { display: grid; gap: 12px; margin-top: auto; }
-  .pick { display: flex; align-items: center; gap: 14px; padding: 14px 20px; font-size: 1.6rem; text-align: left; border-radius: 22px; }
-  .pick .e { font-size: 2.6rem; width: 56px; text-align: center; filter: drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
-  .pick small { display: block; font-family: var(--body); font-size: .8rem; font-weight: 600; opacity: .7; }
+  .picks { display: grid; gap: 10px; margin-top: auto; }
+  .pick { display: flex; align-items: center; gap: 14px; padding: 12px 18px; min-height: 62px; font-size: 1.48rem; text-align: left; border-radius: 20px; }
+  .pick .e { font-size: 2.35rem; width: 52px; text-align: center; filter: drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+  .pick small { display: block; font-family: var(--body); font-size: .78rem; font-weight: 600; opacity: .72; }
 
-  .banner { border-radius: 16px; padding: 10px 14px; font-weight: 700; text-align: center; font-size: .92rem; }
+  .banner { border-radius: 14px; padding: 8px 12px; font-weight: 700; text-align: center; font-size: .88rem; line-height: 1.35; }
   .banner.gold { background: rgba(255,210,63,.12); color: var(--gold); border: 1px dashed rgba(255,210,63,.7); }
   .banner.boss { background: rgba(138,143,255,.15); color: #cfd1ff; border: 1px dashed var(--boss); }
   .banner.green { background: rgba(77,255,154,.1); color: #b3ffd4; border: 1px dashed var(--win); }
+  .banner.errb { background: rgba(255,90,110,.15); color: #ffb5bf; border: 1px dashed var(--rock); }
 
-  .chosen { font-size: 7rem; line-height: 1; animation: pop .4s ease both, floaty 2s 0.4s ease-in-out infinite; }
+  .chosen { font-size: 6.4rem; line-height: 1; animation: pop .4s ease both, floaty 2s 0.4s ease-in-out infinite; }
+  .lock-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: .84rem; font-weight: 700; background: rgba(77,255,154,.12); color: var(--win); border: 1px solid rgba(77,255,154,.35); }
+  .lock-badge.sending { background: rgba(255,210,63,.12); color: var(--gold); border-color: rgba(255,210,63,.35); }
   .clash { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; width: 100%; }
   .clash .side { text-align: center; min-width: 0; }
-  .clash .big { font-size: 5.5rem; line-height: 1; display: inline-block; }
+  .clash .big { font-size: 5.2rem; line-height: 1; display: inline-block; }
   .clash .side.l .big { animation: inL .45s cubic-bezier(.2,1.4,.4,1) both; }
   .clash .side.r .big { animation: inR .45s cubic-bezier(.2,1.4,.4,1) both; }
   .clash .who { font-weight: 700; font-size: .85rem; color: var(--muted); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .verdict { font-family: var(--display); font-weight: 800; font-size: 2.5rem; line-height: 1.05; text-align: center; animation: pop .5s .35s ease both; }
+  .verdict { font-family: var(--display); font-weight: 800; font-size: 2.35rem; line-height: 1.05; text-align: center; animation: pop .5s .35s ease both; }
   .verdict.win { color: var(--win); text-shadow: 0 0 30px rgba(77,255,154,.4); }
   .verdict.lose { color: var(--lose); }
   .verdict.tie { color: var(--gold); }
   .sub { text-align: center; color: var(--muted); font-weight: 600; animation: fadeUp .4s .6s both; }
 
-  .score { display: flex; justify-content: center; gap: 18px; align-items: center; font-family: var(--display); font-weight: 800; }
-  .score .num { font-size: 2.1rem; line-height: 1; }
+  .score { display: flex; justify-content: center; gap: 14px; align-items: center; font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .score .num { font-size: 1.9rem; line-height: 1; }
   .dots { display: flex; gap: 6px; }
-  .dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.15); }
+  .dots i { width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,.15); }
   .dots i.on { background: var(--gold); box-shadow: 0 0 12px var(--gold); }
 
   .bigicon { font-size: 4.2rem; line-height: 1; animation: pop .5s both; }
   .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width: 100%; }
   .stat { background: var(--sunk); border-radius: 16px; padding: 12px 6px; text-align: center; }
-  .stat b { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+  .stat b { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
   .stat span { font-size: .72rem; color: var(--muted); font-weight: 600; }
   .idol { display: flex; align-items: center; gap: 12px; text-align: left; }
   .idol .avatar { width: 52px; height: 52px; font-size: 1.8rem; }
@@ -116,6 +119,19 @@
   .rules h5 { margin: 14px 0 6px; font-family: var(--display); font-size: 1.05rem; color: var(--gold); }
   .rules ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: #d9d4ff; font-size: .9rem; line-height: 1.45; }
   .conn { position: fixed; top: 0; left: 0; right: 0; background: var(--rock); color: #fff; text-align: center; font-weight: 700; padding: 6px; z-index: 60; font-size: .85rem; }
+
+  /* Nén gọn trên màn hình điện thoại thấp để 3 nút Búa/Bao/Kéo luôn vừa 1 màn không phải cuộn */
+  @media (max-height: 740px) {
+    .screen { gap: 10px; }
+    .main { gap: 10px; }
+    .topbar { padding: max(8px, env(safe-area-inset-top)) 16px 6px; }
+    .fighter .avatar { width: 52px; height: 52px; font-size: 1.85rem; }
+    .fighter .nm { font-size: .98rem; margin-top: 2px; }
+    .pick { padding: 10px 16px; min-height: 54px; font-size: 1.32rem; border-radius: 18px; }
+    .pick .e { font-size: 2rem; width: 44px; }
+    .picks { gap: 8px; }
+    .banner { padding: 6px 10px; font-size: .82rem; }
+  }
 
   /* máy tính: 2 cột */
   @media (min-width: 900px) {
@@ -149,26 +165,88 @@ const $app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} }, del(k) { try { localStorage.removeItem(k); } catch {} } };
 
-let S = null, offset = 0, pid = store.get('ott_pid'), lastKey = '', cfg = { departments: [] }, SV = null, joinErr = '';
+let S = null, offset = 0, pid = store.get('ott_pid'), lastKey = '', cfg = { departments: [], bossTieSurvives: true }, SV = null, joinErr = '';
+let sendingHand = null, pickErr = '', suspTimers = [], wakeLock = null;
 const form = { name: store.get('ott_name') || '', dept: store.get('ott_dept') || '', avatar: store.get('ott_av') || AVATARS[(Math.random() * AVATARS.length) | 0] };
+
+// ---------- Giữ màn hình không tắt trong lúc chờ trận ----------
+async function requestWakeLock() {
+  if (!pid || !('wakeLock' in navigator)) return;
+  try {
+    if (wakeLock && !wakeLock.released) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch {}
+}
+function releaseWakeLock() {
+  try { wakeLock?.release(); wakeLock = null; } catch {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && pid) requestWakeLock();
+});
 
 const socket = io({ transports: ['websocket', 'polling'] });
 socket.on('connect', () => {
   document.getElementById('conn').classList.add('hidden');
-  if (pid) socket.emit('join', { pid }, r => { if (!r.ok) { pid = null; store.del('ott_pid'); lastKey = ''; render(); } });
+  sendingHand = null;
+  if (pid) {
+    requestWakeLock();
+    socket.emit('join', { pid }, r => { if (!r.ok) { pid = null; store.del('ott_pid'); releaseWakeLock(); lastKey = ''; render(); } });
+  }
 });
-socket.on('disconnect', () => document.getElementById('conn').classList.remove('hidden'));
-socket.on('state', s => { S = s; offset = s.serverNow - Date.now(); if (s.phase === 'lobby') SV = null; render(); });
+socket.on('disconnect', () => {
+  document.getElementById('conn').classList.remove('hidden');
+  if (sendingHand) { sendingHand = null; pickErr = 'Mất kết nối lúc gửi — vui lòng bấm lại khi có mạng!'; lastKey = ''; render(); }
+});
+socket.on('state', s => {
+  const prevPhase = S?.phase;
+  S = s; offset = s.serverNow - Date.now();
+  if (s.phase === 'lobby') SV = null;
+  if (s.phase !== 'choosing' || s.choice) { sendingHand = null; pickErr = ''; }
+  if (prevPhase !== 'suspense' && s.phase === 'suspense') playSuspenseWords();
+  render();
+});
 socket.on('survivors', d => { SV = d; lastKey = ''; render(); });
-socket.on('cleared', () => { pid = null; S = null; SV = null; store.del('ott_pid'); lastKey = ''; render(); });
-fetch('/config.json').then(r => r.json()).then(c => { cfg = c; if (!pid) { lastKey = ''; render(); } }).catch(() => {});
+socket.on('cleared', () => { pid = null; S = null; SV = null; sendingHand = null; pickErr = ''; store.del('ott_pid'); releaseWakeLock(); lastKey = ''; render(); });
+socket.on('kicked', d => {
+  pid = null; S = null; SV = null; sendingHand = null; pickErr = '';
+  store.del('ott_pid'); releaseWakeLock();
+  joinErr = d?.reason || 'MC đã xóa bạn khỏi danh sách phòng chờ.';
+  lastKey = ''; render();
+});
+fetch('/config.json').then(r => r.json()).then(c => {
+  cfg = c;
+  if (cfg.departments.length && form.dept && !cfg.departments.includes(form.dept)) {
+    form.dept = '';
+    store.del('ott_dept');
+  }
+  if (!pid) { lastKey = ''; render(); }
+}).catch(() => {});
+
+function playSuspenseWords() {
+  while (suspTimers.length) clearTimeout(suspTimers.pop());
+  const total = S?.suspenseMs || 1200;
+  const words = ['OẲN…', 'TÙ…', 'TÌ…'];
+  const step = Math.floor(total / 3);
+  words.forEach((w, i) => {
+    suspTimers.push(setTimeout(() => {
+      if (!S || S.phase !== 'suspense') return;
+      if (navigator.vibrate) navigator.vibrate(18);
+      const el = document.querySelector('.suspense-word');
+      if (el) {
+        el.textContent = w;
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = '';
+      }
+    }, i * step));
+  });
+}
 
 // ---------- Vẽ ----------
-let firstBk = true;
 function render() {
   let html, key;
-  if (!pid || !S) { key = 'join:' + cfg.departments.length + ':' + !!pid; if (key === lastKey) return; html = pid ? loading() : joinScreen(); }
-  else { key = JSON.stringify({ ...S, serverNow: 0 }) + (SV ? SV.round : ''); if (key === lastKey) return; html = gameScreen(); }
+  if (!pid || !S) { key = 'join:' + cfg.departments.length + ':' + !!pid + ':' + joinErr; if (key === lastKey) return; html = pid ? loading() : joinScreen(); }
+  else { key = JSON.stringify({ ...S, serverNow: 0 }) + '|' + (SV ? SV.round : '') + '|' + (sendingHand || '') + '|' + pickErr; if (key === lastKey) return; html = gameScreen(); }
   const bkPrev = document.querySelector('.bkscroll');
   const keep = bkPrev && bkPrev.dataset.k === (S?.bracket ? S.bracket.cols[0].r + ':' + S.bracket.cols[0].from : '') ? bkPrev.scrollLeft : null;
   lastKey = key;
@@ -216,19 +294,22 @@ function pathBar() {
   const s = S;
   if (!s.tpath || s.phase === 'lobby') return '';
   return `<div class="pathbar">${s.tpath.map((p, i) => {
-    const ok = i < s.reach && (s.me.alive || i < s.reach);
+    const bye0 = i === 0 && s.byeR1;
+    const ok = i < s.reach;
     const x = !s.me.alive && i === s.reach;
-    return `<span class="pc ${p.cur ? 'cur' : ''} ${ok ? 'ok' : ''} ${x ? 'x' : ''}">${ok ? '✓ ' : x ? '✗ ' : ''}${esc(p.name)}${p.bo !== 'BO1' ? ` <span class="bo2">${p.bo}</span>` : ''}</span>`;
+    const prefix = bye0 ? '🎟️ ' : ok ? '✓ ' : x ? '✗ ' : '';
+    return `<span class="pc ${p.cur ? 'cur' : ''} ${ok ? 'ok' : ''} ${x ? 'x' : ''}">${prefix}${esc(p.name)}${p.bo !== 'BO1' ? ` <span class="bo2">${p.bo}</span>` : ''}</span>`;
   }).join('')}<span class="pc ${s.phase === 'champion' ? 'cur' : ''}">🏆</span></div>`;
 }
 
-function ring(size = 96) {
-  const r = size / 2 - 8, c = 2 * Math.PI * r;
-  return `<div class="ring" id="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle class="track" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="10"/><circle class="bar" id="ringbar" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="10" stroke-dasharray="${c}" stroke-dashoffset="0" data-c="${c}"/></svg><span class="num" id="ringnum" style="font-size:${size*0.36}px">…</span></div>`;
+function ring(size = 84) {
+  const r = size / 2 - 7, c = 2 * Math.PI * r;
+  return `<div class="ring" id="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle class="track" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="9"/><circle class="bar" id="ringbar" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="9" stroke-dasharray="${c}" stroke-dashoffset="0" data-c="${c}"/></svg><span class="num" id="ringnum" style="font-size:${size*0.36}px">…</span></div>`;
 }
 const fighter = (p, label) => `<div class="fighter"><div class="avatar">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="dp">${esc(label || p.dept || '')}</div></div>`;
 const dots = (n, need) => Array.from({ length: need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
 const scoreBar = (me, op, need) => need > 1 ? `<div class="score"><div class="dots">${dots(me, need)}</div><span class="num">${me} – ${op}</span><div class="dots">${dots(op, need)}</div></div>` : '';
+const histBar = hist => hist && hist.length ? `<div class="mhist">${hist.map((h, i) => `<span class="mhist-i ${h.outcome}"><span class="vn">V${i + 1}</span>${HANDS[h.my].e}–${HANDS[h.opp].e}${h.luck ? '🍀' : ''}</span>`).join('')}</div>` : '';
 
 function gameScreen() {
   const s = S;
@@ -236,6 +317,7 @@ function gameScreen() {
   if (s.phase === 'ready') return ready();
   if (s.phase === 'champion') return champion();
   if (s.phase === 'reveal' && s.inStep && s.last) return reveal();
+  if (s.phase === 'suspense' && (s.role === 'duel' || s.role === 'boss')) return suspense();
   if (s.phase === 'choosing' && (s.role === 'duel' || s.role === 'boss')) return choosing();
   if (!s.me.alive) return outScreen();
   if (s.phase === 'roundEnd') return roundEnd();
@@ -243,6 +325,7 @@ function gameScreen() {
 }
 
 function rulesCard(open) {
+  const tieRule = (S?.bossTieSurvives ?? cfg.bossTieSurvives) ? 'Thua Boss là bị loại, hòa vẫn sống.' : 'Chỉ THẮNG Boss mới sống — thua hoặc hòa đều bị loại!';
   return `<details class="card rules" ${open ? 'open' : ''}><summary>📜 Luật chơi</summary>
     <h5>⚔️ Đấu Tay Đôi</h5><ul>
       <li>Chốt danh sách xong, hệ thống bốc thăm chia cặp ngẫu nhiên thành sơ đồ loại trực tiếp.</li>
@@ -251,8 +334,8 @@ function rulesCard(open) {
       <li>Hòa thì đấu lại; hòa 3 lần liên tiếp thì Thần May Mắn 🍀 tung đồng xu.</li>
     </ul>
     <h5>🤖 Đại Chiến Boss</h5><ul>
-      <li>Cả hội trường cùng đấu với Boss mỗi vòng. Thua Boss là bị loại, hòa vẫn sống.</li>
-      <li>Đấu liên tục đến khi chỉ còn 1 người. Nếu tất cả cùng thua, Boss tha và đấu lại.</li>
+      <li>Cả hội trường cùng đấu với Boss mỗi vòng. ${tieRule}</li>
+      <li>Đấu liên tục đến khi chỉ còn 1 người. Nếu tất cả cùng thua, Boss tha và đấu lại ngay.</li>
     </ul>
     <h5>Chung</h5><ul>
       <li>Hết giờ chưa chọn thì máy chọn bừa giùm.</li>
@@ -289,9 +372,10 @@ function bracketCard(title) {
 
 function ready() {
   const s = S;
+  const tieRule = s.bossTieSurvives ? 'Thua Boss là bị loại, hòa vẫn sống.' : 'Chỉ THẮNG Boss mới sống — thua hoặc hòa đều bị loại!';
   if (s.type === 'boss') return layout(`<div class="screen center">
     <div class="bigicon" style="font-size:5rem;animation:shake 1.2s infinite">🤖</div><h2>ĐẠI CHIẾN BOSS</h2>
-    <div class="banner boss">Bạn và ${s.total - 1} người khác cùng đấu với Boss. Thua Boss là bị loại, hòa vẫn sống. Ai trụ lại cuối cùng sẽ vô địch!</div>
+    <div class="banner boss">Bạn và ${s.total - 1} người khác cùng đấu với Boss. ${tieRule} Ai trụ lại cuối cùng sẽ vô địch!</div>
     <p class="muted">Nhìn lên màn hình lớn, MC sắp bắt đầu…</p></div>`, '');
   const opp = s.opponent;
   return layout(`<div class="card hero">
@@ -311,19 +395,41 @@ function choosing() {
   const boss = s.role === 'boss';
   const opp = boss ? BOSS : s.opponent;
   let head = '';
-  if (s.last && s.step > 0 && !boss) {
+  if (pickErr) {
+    head = `<div class="banner errb">⚠️ ${esc(pickErr)}</div>`;
+  } else if (s.last && s.step > 0 && !boss) {
     head = s.last.outcome === 'tie'
       ? `<div class="banner gold">⚡ HÒA! Cả hai cùng ra ${HANDS[s.last.my]?.e || ''} — đấu lại!</div>`
       : `<div class="banner ${s.last.outcome === 'win' ? 'green' : 'gold'}">${s.last.outcome === 'win' ? '✅ Bạn thắng ván vừa rồi!' : '😬 Bạn thua ván vừa rồi — gỡ lại nào!'}</div>`;
+  } else if (boss) {
+    head = `<div class="banner boss">${s.bossTieSurvives ? 'Đánh bại hoặc hòa Boss để sống sót. Thua là bị loại!' : 'Chỉ THẮNG Boss mới sống sót. Thua hoặc hòa đều bị loại!'}</div>`;
   }
-  if (boss) head = `<div class="banner boss">Đánh bại hoặc hòa Boss để sống sót. Thua là bị loại!</div>`;
   const sc = !boss && s.score ? scoreBar(s.score.me, s.score.opp, s.score.need) : '';
-  const body = s.choice
-    ? `<div class="screen center"><div class="chosen">${HANDS[s.choice].e}</div><h2>Đã chọn ${HANDS[s.choice].name}!</h2><p class="muted">Giữ bí mật nhé… đang chờ ${boss ? 'cả hội trường' : 'đối thủ'} 🤫</p></div>`
+  const hs = !boss && s.score && s.score.need > 1 && s.score.hist?.length ? histBar(s.score.hist) : '';
+  const activeHand = s.choice || sendingHand;
+  const body = activeHand
+    ? `<div class="screen center" style="gap:12px">
+        <div class="chosen">${HANDS[activeHand].e}</div>
+        <h2>${s.choice ? `Đã chọn ${HANDS[activeHand].name}!` : `Đang gửi ${HANDS[activeHand].name}…`}</h2>
+        <span class="lock-badge ${s.choice ? '' : 'sending'}">${s.choice ? '✓ Server đã ghi nhận' : '⏳ Đang xác nhận…'}</span>
+        <p class="muted" style="margin:0">Giữ bí mật nhé… đang chờ ${boss ? 'cả hội trường' : 'đối thủ'} 🤫</p>
+      </div>`
     : picks();
   return layout(`${head}
-    <div class="vs">${fighter(s.me, 'Bạn')}<div style="display:grid;place-items:center">${ring(96)}</div>${fighter(opp)}</div>
-    ${sc}${body}`, '');
+    <div class="vs">${fighter(s.me, 'Bạn')}<div style="display:grid;place-items:center">${ring(84)}</div>${fighter(opp)}</div>
+    ${sc}${hs}${body}`, '');
+}
+
+function suspense() {
+  const s = S;
+  const boss = s.role === 'boss';
+  const opp = boss ? BOSS : s.opponent;
+  return layout(`<div class="screen center" style="gap:20px">
+    <div class="vs" style="width:100%">${fighter(s.me, 'Bạn')}<div class="vsx">VS</div>${fighter(opp)}</div>
+    <div class="suspense-fists" style="font-size:4.8rem"><span class="fl">✊</span><span class="fr">✊</span></div>
+    <div class="suspense-word" style="font-size:2.8rem">OẲN…</div>
+    <div class="muted" style="font-weight:700">${s.choice ? `Tay bạn đã chọn: ${HANDS[s.choice].e} ${HANDS[s.choice].name}` : 'Chuẩn bị lật bài!'}</div>
+  </div>`, '');
 }
 
 function verdictOf(l) {
@@ -331,7 +437,7 @@ function verdictOf(l) {
   if (l.boss) {
     if (o === 'win') return ['win', 'HẠ GỤC BOSS! 💪', 'Bạn sống sót qua vòng này.'];
     if (o === 'tie') return ['tie', 'HÒA BOSS 😮‍💨', 'Thoát chết trong gang tấc — bạn vẫn sống!'];
-    if (o === 'mercy') return ['tie', 'BOSS THA MẠNG 🙏', 'Tất cả đều thua nên không ai bị loại. Đấu lại!'];
+    if (o === 'mercy') return ['tie', 'BOSS THA MẠNG 🙏', 'Tất cả đều thua nên không ai bị loại. Đấu lại ngay!'];
     return ['lose', 'BOSS TIỄN BẠN 🤖', 'Bạn đã bị loại. Ở lại xem ai là người cuối cùng nhé!'];
   }
   if (l.matchOver) {
@@ -348,12 +454,14 @@ function reveal() {
   const opp = l.boss ? BOSS : s.opponent;
   const [cls, title, sub] = verdictOf(l);
   if (cls === 'win') setTimeout(confetti, 450);
-  return layout(`<div class="screen center" style="gap:22px">
+  const hs = !l.boss && s.score && s.score.need > 1 && s.score.hist?.length ? histBar(s.score.hist) : '';
+  return layout(`<div class="screen center" style="gap:18px">
       <div class="clash">
         <div class="side l"><div class="big">${HANDS[l.my].e}</div><div class="who">Bạn${l.auto ? ' · máy chọn hộ' : ''}</div></div>
         <div class="side r"><div class="big">${HANDS[l.opp].e}</div><div class="who">${esc(opp?.name || '')}${l.oppAuto ? ' · máy chọn hộ' : ''}</div></div>
       </div>
       ${!l.boss ? scoreBar(l.me, l.op, l.need) : ''}
+      ${hs}
       <div class="verdict ${cls}">${title}</div>
       <div class="sub">${sub}</div>
     </div>`, '');
@@ -363,7 +471,14 @@ function survivorsHtml() {
   if (!SV) return '';
   return `<div class="card" style="width:100%;text-align:left">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><b style="font-family:var(--display);font-size:1.1rem">👥 Còn lại sau vòng ${SV.round}</b><span class="pill"><b>${SV.list.length}</b> người</span></div>
-    <div class="survivors">${SV.list.map(([n, a]) => `<span class="sv ${n === S.me.name && S.me.alive ? 'me' : ''}">${a} ${esc(n)}</span>`).join('')}</div></div>`;
+    <div class="survivors">${SV.list.map(row => {
+      const hasId = row.length >= 4;
+      const id = hasId ? row[0] : null;
+      const n = hasId ? row[1] : row[0];
+      const a = hasId ? row[2] : row[1];
+      const isMe = S.me.alive && (id ? id === S.me.id : n === S.me.name);
+      return `<span class="sv ${isMe ? 'me' : ''}">${a} ${esc(n)}</span>`;
+    }).join('')}</div></div>`;
 }
 
 function waiting() {
@@ -441,18 +556,45 @@ function bind() {
         if (!r.ok) { joinErr = r.error; err.textContent = r.error; return; }
         joinErr = '';
         pid = r.pid; store.set('ott_pid', pid); store.set('ott_name', form.name); store.set('ott_dept', form.dept); store.set('ott_av', form.avatar);
+        requestWakeLock();
         lastKey = ''; render();
       });
     };
   }
   document.querySelectorAll('.pick').forEach(b => b.onclick = () => {
+    if (sendingHand || !S?.canChoose) return;
     const h = b.dataset.h;
     if (navigator.vibrate) navigator.vibrate(30);
-    socket.emit('choose', h);
-    S = { ...S, choice: h, canChoose: false }; lastKey = ''; render();
+    sendingHand = h;
+    pickErr = '';
+    lastKey = ''; render();
+    let settled = false;
+    const guard = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      if (sendingHand === h && S?.phase === 'choosing' && !S?.choice) {
+        sendingHand = null;
+        pickErr = 'Mạng chậm, chưa nhận được phản hồi — bấm lại nhé!';
+        lastKey = ''; render();
+      }
+    }, 3500);
+    socket.emit('choose', h, res => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(guard);
+      if (res?.ok) {
+        sendingHand = null;
+        S = { ...S, choice: res.hand || h, canChoose: false };
+        lastKey = ''; render();
+      } else {
+        sendingHand = null;
+        pickErr = res?.error || 'Chưa ghi nhận được, vui lòng thử lại!';
+        lastKey = ''; render();
+      }
+    });
   });
   const lv = document.getElementById('leave');
-  if (lv) lv.onclick = () => { socket.emit('leave'); pid = null; store.del('ott_pid'); S = null; lastKey = ''; render(); };
+  if (lv) lv.onclick = () => { socket.emit('leave'); pid = null; store.del('ott_pid'); releaseWakeLock(); S = null; lastKey = ''; render(); };
   tick();
 }
 

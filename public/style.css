@@ -111,6 +111,8 @@ button, input { font: inherit; color: inherit; }
 @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes glow { 50% { box-shadow: 0 0 0 1px var(--gold), 0 0 26px rgba(255,210,63,.45); } }
+@keyframes fistPumpL { 0%,100% { transform: translateY(0) rotate(-14deg) scale(1); } 45% { transform: translateY(-22px) rotate(-26deg) scale(1.08); } 65% { transform: translateY(6px) rotate(-4deg) scale(.96); } }
+@keyframes fistPumpR { 0%,100% { transform: translateY(0) scaleX(-1) rotate(-14deg) scale(1); } 45% { transform: translateY(-22px) scaleX(-1) rotate(-26deg) scale(1.08); } 65% { transform: translateY(6px) scaleX(-1) rotate(-4deg) scale(.96); } }
 
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
 .confetti i { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 3px; animation: fall linear forwards; }
@@ -118,11 +120,53 @@ button, input { font: inherit; color: inherit; }
 
 .ring { position: relative; display: grid; place-items: center; }
 .ring svg { transform: rotate(-90deg); }
-.ring .num { position: absolute; font-family: var(--display); font-weight: 800; }
+.ring .num { position: absolute; font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; }
 .ring circle.track { stroke: rgba(255,255,255,.12); }
 .ring circle.bar { stroke: var(--gold); stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .3s; }
 .ring.urgent circle.bar { stroke: var(--rock); }
 .ring.urgent .num { color: var(--rock); animation: pulse .4s infinite alternate; }
+
+/* ---------- Nhịp hồi hộp "Oẳn… Tù… Tì…" ---------- */
+.suspense-fists { display: flex; align-items: center; justify-content: center; gap: 1.4em; line-height: 1; }
+.suspense-fists .fl { display: inline-block; animation: fistPumpL .38s ease-in-out infinite; }
+.suspense-fists .fr { display: inline-block; animation: fistPumpR .38s ease-in-out infinite; }
+.suspense-word {
+  font-family: var(--display); font-weight: 800; color: var(--gold);
+  letter-spacing: .04em; text-shadow: 0 4px 0 #8a2b00, 0 0 28px rgba(255,210,63,.4);
+  animation: pop .25s ease both;
+}
+
+/* ---------- Lịch sử ván BO3 / BO5 ---------- */
+.mhist { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.mhist-i {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 9px; font-size: .82rem; font-weight: 700;
+  background: rgba(255,255,255,.06); border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.mhist-i.win { border-color: rgba(77,255,154,.45); background: rgba(77,255,154,.1); color: #c7ffdf; }
+.mhist-i.lose { border-color: rgba(255,90,110,.4); background: rgba(255,90,110,.09); color: #ffc7ce; }
+.mhist-i.tie { border-color: rgba(255,210,63,.45); background: rgba(255,210,63,.08); color: #ffe999; }
+.mhist-i .vn { color: var(--muted); font-size: .78em; }
+
+/* ---------- Hộp thoại Modal trong trang ---------- */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px;
+  background: rgba(8,6,22,.82); backdrop-filter: blur(8px); animation: fadeUp .18s ease both;
+}
+.modal-card {
+  width: min(460px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #251d60, #191345); border: 1px solid var(--line2);
+  border-radius: 24px; padding: 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+.modal-card.wide { width: min(760px, 100%); }
+.modal-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.modal-hd h3 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 1.45rem; line-height: 1.1; }
+.modal-bd { color: #dcd7ff; font-size: .98rem; line-height: 1.5; overflow-y: auto; min-height: 0; }
+.modal-ft { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.modal-ft .btn { font-size: 1rem; padding: .65em 1.2em .58em; border-radius: 14px; box-shadow: 0 4px 0 var(--d); }
+.modal-ft .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--d); }
+.btn.danger { --c: var(--rock); --d: var(--rock-d); color: #fff; }
 
 /* =================== SƠ ĐỒ NHÁNH =================== */
 .bk { display: flex; align-items: stretch; }
@@ -181,19 +225,19 @@ button, input { font: inherit; color: inherit; }
 .mr .av { text-align: center; font-size: 1.05em; }
 .mr .n { overflow: hidden; text-overflow: ellipsis; }
 .mr .hd { font-size: 1.15em; animation: pop .35s both; }
-.mr .s { align-self: stretch; display: grid; place-items: center; min-width: 2em; padding: 0 2px; background: rgba(0,0,0,.28); font-family: var(--display); font-weight: 800; color: var(--muted); }
+.mr .s { align-self: stretch; display: grid; place-items: center; min-width: 2em; padding: 0 2px; background: rgba(0,0,0,.28); font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--muted); }
 .mr.w { color: #fff; }
 .mr.w .n { font-weight: 800; }
 .mr.w .s { background: var(--gold); color: #1a1033; }
-.mr.l { color: rgba(255,255,255,.36); }
-.mr.l .av { filter: grayscale(1); opacity: .6; }
-.mr.l .n { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.25); }
-.mr.tbd { color: rgba(255,255,255,.28); font-style: italic; font-weight: 500; }
+.mr.l { color: rgba(255,255,255,.5); }
+.mr.l .av { filter: grayscale(1); opacity: .68; }
+.mr.l .n { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
+.mr.tbd { color: rgba(255,255,255,.38); font-style: italic; font-weight: 500; }
 .mr.focus .n, .mr.me .n { color: var(--gold); }
 .mr.me { background: linear-gradient(90deg, rgba(255,210,63,.16), transparent 70%); }
 .mc.mine { border-color: var(--win); box-shadow: 0 0 0 1px var(--win), 0 0 18px rgba(77,255,154,.28); }
 .mc.live { border-color: var(--gold); animation: glow 1.4s ease-in-out infinite; }
-.mc.bye { opacity: .75; }
+.mc.bye { opacity: .82; }
 .mc.trophy { text-align: center; padding: 10px 8px; background: linear-gradient(160deg, rgba(255,210,63,.22), rgba(255,138,61,.12)); border-color: rgba(255,210,63,.6); display: grid; gap: 2px; justify-items: center; }
 .mc.trophy.wait { opacity: .7; }
 .mc.trophy .tr-ic { font-size: 1.8em; line-height: 1; }

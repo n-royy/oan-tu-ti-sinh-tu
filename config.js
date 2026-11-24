@@ -24,6 +24,8 @@ module.exports = {
   NEXT_GAME_SECONDS: num(env.NEXT_GAME_SECONDS, 7),
   // Thời gian hiển thị kết quả mỗi lần lật bài (giây)
   REVEAL_SECONDS: num(env.REVEAL_SECONDS, 4),
+  // Thời gian tạo nhịp "Oẳn… Tù… Tì… Ra!" trước khi lật bài (ms, đặt 0 để tắt)
+  SUSPENSE_MS: num(env.SUSPENSE_MS, 1200),
 
   // Hòa quá số lần này liên tiếp thì "Thần May Mắn" tung đồng xu quyết định ván đó
   TIE_LIMIT: num(env.TIE_LIMIT, 3),

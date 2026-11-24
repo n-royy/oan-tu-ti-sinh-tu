@@ -88,7 +88,9 @@ Thanh dưới cùng màn hình lớn (bấm phím **H** để ẩn/hiện khi ch
 
 - **Phòng chờ:**
   - **⚔️ Đấu Tay Đôi** hoặc **🤖 Đại Chiến Boss**: chốt danh sách, chọn chế độ và bốc thăm.
-  - **🤖 +50 bot thử** / **Xóa bot**: thêm hoặc xóa người chơi ảo để tập dượt.
+  - **👥 Quản lý**: tìm kiếm, lọc người thật/bot và xóa từng người chơi nếu cần.
+  - **+10 bot** / **+50 bot** / **Xóa bot**: thêm hoặc xóa người chơi ảo để tập dượt.
+  - Bấm trực tiếp vào **mã QR** để phóng to toàn màn hình (nhấn `ESC` để thu nhỏ).
 - **Sau khi chốt:**
   - **▶️ Bắt đầu Vòng…**: chạy vòng tiếp theo.
   - **↩️ Hủy, mở lại đăng ký**: quay lại phòng chờ khi lỡ chốt sớm.
@@ -97,9 +99,10 @@ Thanh dưới cùng màn hình lớn (bấm phím **H** để ẩn/hiện khi ch
 - **Chế độ Boss:**
   - **⏸ Tắt / ⏯ Bật tự chạy**: chuyển giữa tự sang vòng tiếp và MC bấm tay.
 - **Bất kỳ lúc nào:**
+  - **📥 Xuất CSV** (khi kết thúc): tải kết quả Vô địch, Á quân, Đồng hạng 3, bảng xếp hạng BU và danh sách người chơi.
   - **🔁 Ván mới (giữ người chơi)**: về phòng chờ, giữ nguyên danh sách để chơi tiếp chế độ khác.
   - **🗑️ Xóa hết người chơi**: xóa toàn bộ, mọi người phải đăng ký lại.
-  - **🔊**: bật/tắt âm thanh đếm ngược.
+  - **🔊**: bật/tắt âm thanh sự kiện.
 
 Phím tắt: **H** ẩn/hiện thanh điều khiển, **S** mở/đóng sơ đồ nhánh. MC cũng có thể mở trang `/host` trên điện thoại để điều khiển; giao diện tự xếp dọc.
 
@@ -121,6 +124,7 @@ Sửa file `config.js` hoặc đặt biến môi trường khi chạy, ví dụ:
 | `CHOICE_SECONDS` | 10 | Thời gian ra tay mỗi lượt |
 | `NEXT_GAME_SECONDS` | 7 | Thời gian ra tay khi hòa hoặc ở ván tiếp theo của trận BO3/BO5 |
 | `REVEAL_SECONDS` | 4 | Thời gian hiện kết quả mỗi lần lật bài |
+| `SUSPENSE_MS` | 1200 | Thời gian nhịp đếm "Oẳn… Tù… Tì…" trước khi lật bài (ms, đặt 0 để tắt) |
 | `TIE_LIMIT` | 3 | Số lần hòa liên tiếp trước khi tung đồng xu |
 | `EARLY_WINS` | 1 | Số ván cần thắng ở các vòng đầu và tứ kết (1 = BO1) |
 | `SEMI_WINS` | 2 | Số ván cần thắng ở bán kết (2 = BO3) |
