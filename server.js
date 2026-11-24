@@ -33,6 +33,7 @@ app.use('/fonts/baloo', express.static(path.join(__dirname, 'node_modules/@fonts
 app.use('/fonts/bvp', express.static(path.join(__dirname, 'node_modules/@fontsource/be-vietnam-pro'), { maxAge: '7d' }));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
 app.get('/host', (_, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
+app.get('/slides', (_, res) => res.sendFile(path.join(__dirname, 'public', 'slides.html')));
 app.get('/qr.svg', async (_, res) => {
   const svg = await QRCode.toString(JOIN_URL, { type: 'svg', margin: 1, color: { dark: '#14102a', light: '#ffffff' } });
   res.type('image/svg+xml').send(svg);

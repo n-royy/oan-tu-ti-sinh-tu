@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0a20">
+<title>Oẳn Tù Tì Sinh Tử · Slide Trình Bày BTC</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  :root {
+    --slide-bg: #120e2c;
+    --surface: rgba(31, 25, 78, .88);
+    --surface-2: rgba(20, 16, 52, .9);
+    --hairline: rgba(255, 255, 255, .1);
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    background:
+      radial-gradient(1200px 700px at 10% -10%, rgba(98, 70, 220, .5) 0%, transparent 58%),
+      radial-gradient(950px 650px at 105% 110%, rgba(160, 42, 175, .38) 0%, transparent 55%),
+      #0a081a;
+  }
+
+  /* Khung trình chiếu */
+  #deck-viewport {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    padding: 2vh 2.4vw 1vh;
+    min-height: 0;
+  }
+
+  .slide {
+    display: none;
+    width: min(100%, calc((100vh - 92px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    max-height: 100%;
+    background:
+      radial-gradient(800px 460px at 88% 8%, rgba(255, 210, 63, .08) 0%, transparent 60%),
+      radial-gradient(700px 520px at 8% 95%, rgba(56, 198, 255, .07) 0%, transparent 55%),
+      linear-gradient(180deg, #17123a 0%, #100c29 100%);
+    border: 1px solid rgba(255, 255, 255, .13);
+    border-radius: 24px;
+    box-shadow: 0 28px 90px rgba(0, 0, 0, .55);
+    padding: 3.6% 4.4%;
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: space-between;
+    animation: fadeUp .28s ease both;
+  }
+  .slide.active { display: flex; }
+
+  /* Phần đầu & chân mỗi slide */
+  .s-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 1.4%;
+    border-bottom: 1px solid var(--hairline);
+    flex: none;
+  }
+  .s-kicker {
+    font-size: clamp(11px, .95vw, 15px);
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: .04em;
+  }
+  .s-meta {
+    font-size: clamp(11px, .88vw, 14px);
+    color: var(--muted);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .s-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(24px, 2.75vw, 46px);
+    line-height: 1.08;
+    margin: 1.6% 0 .6%;
+    text-wrap: balance;
+  }
+  .s-lead {
+    margin: 0;
+    color: #d6d0ff;
+    font-size: clamp(13px, 1.12vw, 18px);
+    line-height: 1.45;
+    max-width: 78ch;
+  }
+  .s-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 1.8%;
+  }
+  .s-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 1.2%;
+    border-top: 1px solid var(--hairline);
+    font-size: clamp(10px, .82vw, 13px);
+    color: var(--muted);
+    font-weight: 600;
+    flex: none;
+  }
+  .s-foot b { color: var(--text); }
+
+  /* Bố cục dùng chung */
+  .g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.2%; align-items: stretch; }
+  .g2-wide { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: 2.6%; align-items: center; }
+  .g2-rev { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 2.6%; align-items: stretch; }
+  .g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2%; align-items: stretch; }
+  .g4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.6%; align-items: stretch; }
+
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    padding: clamp(12px, 1.5vw, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .box.sunk { background: var(--surface-2); }
+  .box.gold { border-color: rgba(255, 210, 63, .45); background: linear-gradient(160deg, rgba(255, 210, 63, .1), rgba(26, 20, 71, .88) 55%); }
+  .box.boss { border-color: rgba(138, 143, 255, .45); background: linear-gradient(160deg, rgba(138, 143, 255, .13), rgba(26, 20, 71, .88) 55%); }
+  .box h3 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(15px, 1.32vw, 22px);
+    line-height: 1.15;
+    color: var(--text);
+  }
+  .box p { margin: 0; color: #d5cfff; font-size: clamp(12px, .98vw, 16px); line-height: 1.48; }
+  .ul { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; color: #dcd7ff; font-size: clamp(12px, 1vw, 16px); line-height: 1.45; }
+  .ul li b { color: var(--text); }
+  .ul li strong { color: var(--gold); }
+
+  /* Slide 1: Cover */
+  .cover-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 3%;
+    align-items: center;
+    height: 100%;
+  }
+  .cover-title {
+    font-family: var(--display);
+    font-weight: 800;
+    line-height: .94;
+    font-size: clamp(38px, 4.8vw, 84px);
+    margin: 0;
+  }
+  .cover-title .accent {
+    display: block;
+    color: var(--gold);
+    text-shadow: 0 5px 0 #8a2b00, 0 0 36px rgba(255, 210, 63, .3);
+  }
+  .cover-sub {
+    margin: 18px 0 22px;
+    font-size: clamp(14px, 1.3vw, 21px);
+    color: #dcd7ff;
+    line-height: 1.48;
+    max-width: 48ch;
+  }
+  .meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    font-size: clamp(11px, .95vw, 15px);
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .meta-line b { color: var(--win); }
+  .hero-emblem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 28px 20px;
+    border-radius: 24px;
+    background: radial-gradient(circle at 50% 35%, rgba(92, 68, 224, .35), rgba(18, 14, 48, .85) 75%);
+    border: 1px solid rgba(255, 210, 63, .32);
+    text-align: center;
+  }
+  .hero-hands {
+    display: flex;
+    gap: 14px;
+    font-size: clamp(46px, 5vw, 86px);
+    line-height: 1;
+  }
+  .hero-hands span { display: inline-block; animation: floaty 2.6s ease-in-out infinite; }
+  .hero-hands span:nth-child(2) { animation-delay: .25s; }
+  .hero-hands span:nth-child(3) { animation-delay: .5s; }
+  .hero-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    padding-top: 14px;
+    border-top: 1px solid var(--hairline);
+  }
+  .hero-kpis div b {
+    display: block;
+    font-family: var(--display);
+    font-size: clamp(22px, 2.3vw, 40px);
+    line-height: 1;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-kpis div span { font-size: clamp(10px, .82vw, 13px); color: var(--muted); font-weight: 600; }
+
+  /* Slide 3: Step flow + phone mock */
+  .step-num {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(12px, .95vw, 15px);
+    color: var(--gold);
+    letter-spacing: .06em;
+  }
+  .mini-phone {
+    margin-top: auto;
+    background: #100c2b;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 16px;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .mp-btn {
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(11px, .9vw, 14px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #1a1033;
+  }
+
+  /* Slide 4: Bracket mini visual */
+  .bk-viz {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 6px;
+  }
+  .bk-col-v { display: grid; gap: 10px; }
+  .bk-node {
+    background: #120e31;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: clamp(10px, .82vw, 13px);
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .bk-node.gold { border-color: rgba(255, 210, 63, .65); color: var(--gold); }
+  .bk-node .sc { color: var(--win); font-family: var(--display); font-variant-numeric: tabular-nums; }
+  .fan-chain {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #120e31;
+    border: 1px solid var(--hairline);
+    font-size: clamp(11px, .86vw, 14px);
+    font-weight: 700;
+  }
+
+  /* Slide 5: Funnel */
+  .funnel { display: grid; gap: 9px; }
+  .f-row { display: grid; grid-template-columns: 6.2em 1fr 4.4em; align-items: center; gap: 10px; font-size: clamp(11px, .9vw, 14px); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .f-bar { height: 18px; border-radius: 8px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+  .f-bar i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--boss), var(--win)); }
+
+  /* Slide 8: Timeline table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: clamp(11px, .95vw, 15px); }
+  .tbl th, .tbl td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  .tbl th { color: var(--muted); font-size: .85em; font-weight: 700; }
+  .tbl td.tm { font-family: var(--display); font-weight: 800; color: var(--gold); white-space: nowrap; font-variant-numeric: tabular-nums; width: 1%; }
+  .tbl tr:last-child td { border-bottom: 0; }
+
+  /* Slide 9: Checklist & CTA */
+  .chk { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: clamp(12px, 1vw, 16px); color: #e2ddff; }
+  .chk li { display: flex; align-items: flex-start; gap: 10px; line-height: 1.4; }
+  .chk li span.ic { color: var(--win); font-weight: 800; flex: none; }
+  .demo-actions { display: grid; gap: 12px; }
+  .demo-actions a.btn, .demo-actions button.btn {
+    text-decoration: none;
+    text-align: center;
+    font-size: clamp(13px, 1.05vw, 18px);
+    padding: .75em 1.2em .68em;
+    border-radius: 15px;
+    box-shadow: 0 4px 0 var(--d);
+  }
+  .demo-actions a.btn:active, .demo-actions button.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--d); }
+
+  /* Thanh điều khiển dưới cùng */
+  #nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 24px 14px;
+    background: rgba(10, 8, 26, .88);
+    border-top: 1px solid var(--hairline);
+    backdrop-filter: blur(8px);
+  }
+  .nav-group { display: flex; align-items: center; gap: 8px; }
+  .nbtn {
+    border: 1px solid var(--hairline);
+    background: rgba(34, 28, 84, .9);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .nbtn:hover { background: #362c85; border-color: rgba(255, 210, 63, .45); }
+  .nbtn:disabled { opacity: .4; cursor: not-allowed; }
+  .nbtn.primary { background: var(--gold); color: #1a1033; border-color: var(--gold); }
+  .nbtn.primary:hover { filter: brightness(1.06); }
+  .dots-nav { display: flex; align-items: center; gap: 6px; }
+  .dot-btn {
+    width: 28px;
+    height: 8px;
+    border-radius: 99px;
+    border: 0;
+    padding: 0;
+    background: rgba(255, 255, 255, .18);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .dot-btn:hover { background: rgba(255, 255, 255, .38); }
+  .dot-btn.on { width: 42px; background: var(--gold); }
+  .slide-num {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 4.5em;
+    text-align: center;
+  }
+  .slide-num b { color: var(--text); }
+
+  /* Responsive mobile/tablet */
+  @media (max-width: 900px) {
+    html, body { overflow: auto; height: auto; }
+    #deck-viewport { padding: 12px; display: block; }
+    .slide { width: 100%; aspect-ratio: auto; min-height: calc(100dvh - 88px); padding: 20px; border-radius: 18px; }
+    .cover-grid, .g2, .g2-wide, .g2-rev, .g3, .g4 { grid-template-columns: 1fr; gap: 12px; }
+    .dots-nav, .nav-hint { display: none; }
+    #nav { position: sticky; bottom: 0; padding: 10px 12px; }
+  }
+
+  /* Chế độ In / Xuất PDF (mỗi slide 1 trang ngang 16:9) */
+  @page { size: 13.333in 7.5in; margin: 0; }
+  @media print {
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      background: #0d0a20 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body::before, #nav { display: none !important; }
+    #deck-viewport { display: block !important; padding: 0 !important; }
+    .slide {
+      display: flex !important;
+      width: 13.333in !important;
+      height: 7.5in !important;
+      max-height: none !important;
+      aspect-ratio: auto !important;
+      border-radius: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      animation: none !important;
+    }
+    .slide:last-child { page-break-after: auto !important; break-after: auto !important; }
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main id="deck-viewport">
+
+  <!-- ==================== SLIDE 1: TRANG BÌA ==================== -->
+  <section class="slide active" data-title="Giới thiệu tổng quan">
+    <div class="s-top">
+      <span class="s-kicker">ĐỀ XUẤT MINI-GAME SỰ KIỆN TOÀN CÔNG TY</span>
+      <span class="s-meta">Trình bày Ban Tổ Chức · 01 / 09</span>
+    </div>
+    <div class="s-body">
+      <div class="cover-grid">
+        <div>
+          <h1 class="cover-title">
+            OẲN TÙ TÌ
+            <span class="accent">SINH TỬ</span>
+          </h1>
+          <p class="cover-sub">
+            Trò chơi loại trực tiếp quy mô lớn cho tối đa <b>500 người chơi</b> cùng lúc trên điện thoại cá nhân — đồng bộ thời gian thực với màn hình LED sân khấu.
+          </p>
+          <div class="meta-line">
+            <span><b>Không cần cài app</b></span>
+            <span>·</span>
+            <span>Quét QR tham gia trong 10 giây</span>
+            <span>·</span>
+            <span>2 chế độ thi đấu</span>
+            <span>·</span>
+            <span>Xuất kết quả Excel</span>
+          </div>
+        </div>
+        <div class="hero-emblem">
+          <div class="hero-hands"><span>✊</span><span>✋</span><span>✌️</span></div>
+          <div style="font-family:var(--display);font-weight:800;font-size:clamp(16px,1.4vw,24px);color:#efeaff">
+            Mọi người cùng chơi · Cả hội trường cùng cháy
+          </div>
+          <div class="hero-kpis">
+            <div><b>500</b><span>Người cùng lúc</span></div>
+            <div><b>2</b><span>Chế độ chơi</span></div>
+            <div><b>15–20p</b><span>Thời lượng gọn</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span><b>Oẳn Tù Tì Sinh Tử</b> · Web App tương tác sân khấu</span>
+      <span>Phím ← / → để chuyển slide · Phím F toàn màn hình</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 2: GIÁ TRỊ CHO BTC ==================== -->
+  <section class="slide" data-title="Vì sao chọn game này?">
+    <div class="s-top">
+      <span class="s-kicker">01 · GIÁ TRỊ MANG LẠI CHO SỰ KIỆN</span>
+      <span class="s-meta">02 / 09</span>
+    </div>
+    <h2 class="s-title">Biến toàn bộ hội trường thành đấu trường thực thụ</h2>
+    <p class="s-lead">Khắc phục nhược điểm của trò chơi sân khấu truyền thống (chỉ 5–10 người chơi, bên dưới nhanh chán) bằng trải nghiệm đồng bộ 100% nhân sự.</p>
+    <div class="s-body">
+      <div class="g2">
+        <div class="box">
+          <h3>👥 100% người tham dự đều được chơi</h3>
+          <p>Hỗ trợ tối đa <b>500 điện thoại</b> đăng ký cùng lúc. Ai cũng trực tiếp ra tay ở từng vòng thay vì chỉ ngồi xem.</p>
+        </div>
+        <div class="box">
+          <h3>⚡ Vào game trong 10 giây, không rào cản</h3>
+          <p>Quét mã QR phóng to trên màn hình LED (hoặc gõ link), nhập Account, chọn BU và linh vật — <b>không cần cài app hay đăng nhập</b>.</p>
+        </div>
+        <div class="box gold">
+          <h3>📣 Giữ lửa tới phút cuối với Fan Club & BU</h3>
+          <p>Người bị loại tự động gia nhập <b>Fan Club</b> của người đã hạ mình và theo dõi nhánh đấu tiếp. Bảng xếp hạng <b>BU trụ lại</b> tạo tinh thần thi đua tập thể.</p>
+        </div>
+        <div class="box">
+          <h3>🛡️ Vận hành gọn nhẹ & minh bạch cho BTC</h3>
+          <p>Mọi kết quả phân định tự động trên server theo thời gian thực, hỗ trợ quản lý danh sách và <b>xuất file CSV (Excel)</b> ngay khi kết thúc.</p>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Dễ hiểu với mọi lứa tuổi · Luật Oẳn Tù Tì quen thuộc</span>
+      <span>Slide 02 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 3: CÁCH THỨC CHƠI 3 BƯỚC ==================== -->
+  <section class="slide" data-title="Cách thức tham gia">
+    <div class="s-top">
+      <span class="s-kicker">02 · CÁCH THỨC THAM GIA</span>
+      <span class="s-meta">03 / 09</span>
+    </div>
+    <h2 class="s-title">3 bước đơn giản trên điện thoại người chơi</h2>
+    <p class="s-lead">Giao diện tối giản, 3 nút Búa / Bao / Kéo nằm gọn trong 1 màn hình điện thoại (không cần cuộn) và tự giữ sáng màn hình khi chờ trận.</p>
+    <div class="s-body">
+      <div class="g3">
+        <div class="box">
+          <div class="step-num">BƯỚC 01</div>
+          <h3>Quét QR & Đăng ký</h3>
+          <p>Nhập <b>Account</b> (chặn trùng tên), chọn <b>BU</b> thi đua và chọn 1 trong 16 linh vật đại diện.</p>
+          <div class="mini-phone">
+            <div style="font-size:12px;color:var(--muted);font-weight:700">Account: <b style="color:#fff">NamNN10</b> · BU: <b style="color:var(--gold)">AI-S</b></div>
+            <div style="font-size:20px;letter-spacing:4px">🦊 🐼 🐯 🦁 🦄 🐲</div>
+            <div class="mp-btn" style="background:var(--gold)"><span>ĐĂNG KÝ THI ĐẤU</span><span>⚔️</span></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="step-num">BƯỚC 02</div>
+          <h3>Ra tay trong 10 giây</h3>
+          <p>MC bấm bắt đầu vòng → người chơi chọn <b>Búa, Bao hoặc Kéo</b>. Có xác nhận từ server chống chọn hụt; hết giờ máy chọn ngẫu nhiên giùm.</p>
+          <div class="mini-phone">
+            <div class="mp-btn" style="background:var(--rock);color:#fff"><span>✊ Búa</span><span style="opacity:.85">thắng Kéo</span></div>
+            <div class="mp-btn" style="background:var(--paper)"><span>✋ Bao</span><span style="opacity:.8">thắng Búa</span></div>
+            <div class="mp-btn" style="background:var(--scis)"><span>✌️ Kéo</span><span style="opacity:.8">thắng Bao</span></div>
+          </div>
+        </div>
+        <div class="box gold">
+          <div class="step-num">BƯỚC 03</div>
+          <h3>Nhịp “Oẳn… Tù… Tì…” & Lật bài</h3>
+          <p>Khóa lựa chọn, màn hình lớn và điện thoại cùng tạo nhịp rung <b>Oẳn… Tù… Tì…</b> rồi công bố kết quả, cập nhật nhánh đấu & bảng xếp hạng.</p>
+          <div class="mini-phone" style="text-align:center;padding:14px 10px">
+            <div style="font-size:28px;line-height:1">✊ &nbsp;⚡&nbsp; ✌️</div>
+            <div style="font-family:var(--display);font-weight:800;font-size:16px;color:var(--win)">CHIẾN THẮNG! 🎉</div>
+            <div style="font-size:11px;color:var(--muted)">Đi tiếp vào vòng sau · Tự mở sơ đồ nhánh</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Hỗ trợ tự vào lại đúng vị trí nếu lỡ tắt trình duyệt hoặc đổi mạng 4G/Wi-Fi</span>
+      <span>Slide 03 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 4: CHẾ ĐỘ 1 - ĐẤU TAY ĐÔI ==================== -->
+  <section class="slide" data-title="Chế độ 1: Đấu Tay Đôi">
+    <div class="s-top">
+      <span class="s-kicker">03 · CHẾ ĐỘ 1 — ĐẤU TAY ĐÔI (KNOCKOUT)</span>
+      <span class="s-meta">04 / 09</span>
+    </div>
+    <h2 class="s-title">⚔️ Sơ đồ loại trực tiếp chuẩn giải đấu</h2>
+    <p class="s-lead">Phù hợp làm tiết mục đinh của chương trình: 500 người qua 9 vòng đấu, đỉnh cao là mời Top 4 lên sân khấu tranh Bán kết BO3 & Chung kết BO5.</p>
+    <div class="s-body">
+      <div class="g2-wide">
+        <div class="box">
+          <h3>Luật thi đấu & nhịp độ</h3>
+          <ul class="ul">
+            <li><b>Bốc thăm chia cặp ngẫu nhiên:</b> Tự động cấp <strong>🎟️ vé vớt</strong> đi thẳng vòng 2 nếu tổng số người chưa tròn (VD: 500 người → 12 vé vớt).</li>
+            <li><b>Thể thức tăng dần kịch tính:</b> Các vòng đầu & Tứ kết đấu <b>BO1</b> (15–30s/vòng); <strong>Bán kết BO3</strong> (thắng 2 ván); <strong>Chung kết BO5</strong> (thắng 3 ván).</li>
+            <li><b>Chống hòa kéo dài:</b> Hòa thì đấu lại ngay (7 giây/lượt); hòa 3 lần liên tiếp thì <strong>🍀 Thần May Mắn</strong> tung đồng xu phân định.</li>
+            <li><b>Lịch sử ra tay BO3/BO5:</b> Hiển thị chi tiết các ván trước giúp 2 đấu thủ bắt bài tâm lý và khán giả theo dõi dễ dàng.</li>
+          </ul>
+        </div>
+        <div class="box gold" style="justify-content:space-between">
+          <h3>Sơ đồ hội tụ & Fan Club kế thừa</h3>
+          <div class="bk-viz">
+            <div class="bk-col-v">
+              <div class="bk-node"><span>🦊 Minh · AI-S</span><span class="sc">2</span></div>
+              <div class="bk-node"><span>🐼 Linh · IMF</span><span class="sc">1</span></div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:clamp(22px,2.2vw,36px)">🏆</div>
+              <div class="bk-node gold" style="margin-top:6px"><span>Chung Kết</span><span>BO5</span></div>
+            </div>
+            <div class="bk-col-v">
+              <div class="bk-node"><span>🦁 Huy · GFS</span><span class="sc">2</span></div>
+              <div class="bk-node"><span>🦄 Trang · PMO</span><span class="sc">0</span></div>
+            </div>
+          </div>
+          <div class="fan-chain">
+            <span>Thua <b>A</b></span>
+            <span style="color:var(--gold)">→</span>
+            <span>Làm fan <b>A</b></span>
+            <span style="color:var(--gold)">→</span>
+            <span><b>A</b> thua <b>B</b></span>
+            <span style="color:var(--gold)">→</span>
+            <span style="color:var(--win)">Cả club cổ vũ <b>B</b> 🏆</span>
+          </div>
+          <p style="font-size:clamp(11px,.86vw,14px)">Kết thúc giải, toàn bộ người bị loại đều quy tụ về Fan Club của Nhà Vô Địch — màn hình điện thoại tự bám sát nhánh đấu của thần tượng.</p>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Lộ trình 500 người: Vòng 1 → V2 → V3 → V4 → 1/16 → 1/8 → Tứ kết → Bán kết (BO3) → Chung kết (BO5)</span>
+      <span>Slide 04 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 5: CHẾ ĐỘ 2 - ĐẠI CHIẾN BOSS ==================== -->
+  <section class="slide" data-title="Chế độ 2: Đại Chiến Boss">
+    <div class="s-top">
+      <span class="s-kicker">04 · CHẾ ĐỘ 2 — ĐẠI CHIẾN BOSS</span>
+      <span class="s-meta">05 / 09</span>
+    </div>
+    <h2 class="s-title">🤖 Cả hội trường hợp lực đối đầu Boss</h2>
+    <p class="s-lead">Chế độ siêu nhanh, không cần ghép cặp, cực hợp để làm warm-up đầu giờ hoặc chơi hiệp phụ giữ nguyên danh sách người chơi sẵn có.</p>
+    <div class="s-body">
+      <div class="g2-rev">
+        <div class="box boss">
+          <h3>Luật chơi sinh tồn</h3>
+          <ul class="ul">
+            <li>Mỗi vòng, toàn bộ người còn sống <b>cùng đấu với Boss</b> (Boss ra tay ngẫu nhiên).</li>
+            <li><b>Thắng hoặc Hòa Boss → Sống sót</b>; Thua Boss → Bị loại (có thể chỉnh cấu hình <i>hòa cũng loại</i> để tăng tốc độ).</li>
+            <li><strong>🙏 Boss tha mạng:</strong> Nếu 100% người còn lại cùng thua, Boss tự tha và vòng đó đấu lại ngay — không bao giờ bị loại sạch.</li>
+            <li><b>Nhịp tự động linh hoạt:</b> Tự chuyển vòng sau 10 giây xem danh sách còn sống, hoặc MC tắt tự chạy để dẫn chuyện trên sân khấu.</li>
+          </ul>
+        </div>
+        <div class="box sunk" style="justify-content:space-between">
+          <h3>Diễn biến thu gọn dự kiến (500 người)</h3>
+          <div class="funnel">
+            <div class="f-row"><span>Xuất phát</span><div class="f-bar"><i style="width:100%"></i></div><span style="text-align:right">500 người</span></div>
+            <div class="f-row"><span>Sau vòng 2</span><div class="f-bar"><i style="width:45%"></i></div><span style="text-align:right">~220 người</span></div>
+            <div class="f-row"><span>Sau vòng 5</span><div class="f-bar"><i style="width:14%"></i></div><span style="text-align:right">~65 người</span></div>
+            <div class="f-row"><span>Sau vòng 10</span><div class="f-bar"><i style="width:4%"></i></div><span style="text-align:right">~10 người</span></div>
+            <div class="f-row"><span style="color:var(--gold)">Vòng 14–16</span><div class="f-bar"><i style="width:2%;background:var(--gold)"></i></div><span style="text-align:right;color:var(--gold)">1 Vô địch 👑</span></div>
+          </div>
+          <p style="font-size:clamp(11px,.88vw,14px)">
+            <b>Hiển thị trực quan:</b> Màn hình LED và điện thoại cùng chiếu danh sách những người sống sót (tự động cuộn mượt) + nhật ký các chiêu Boss đã tung.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Thời lượng trung bình cho 500 người: ~6–8 phút · Chơi nối tiếp ngay sau Đấu Tay Đôi mà không cần quét QR lại</span>
+      <span>Slide 05 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 6: TRẢI NGHIỆM 2 MÀN HÌNH ==================== -->
+  <section class="slide" data-title="Giao diện LED & Điện thoại">
+    <div class="s-top">
+      <span class="s-kicker">05 · TRẢI NGHIỆM HAI MÀN HÌNH ĐỒNG BỘ</span>
+      <span class="s-meta">06 / 09</span>
+    </div>
+    <h2 class="s-title">Thiết kế tối ưu riêng cho Màn hình LED & Điện thoại</h2>
+    <p class="s-lead">Tông màu tối nổi bật trong hội trường, font Việt hóa đóng gói sẵn, hiển thị rõ ràng từ hàng ghế cuối cho tới màn hình điện thoại nhỏ.</p>
+    <div class="s-body">
+      <div class="g2">
+        <div class="box gold">
+          <h3>🖥️ Màn hình lớn / Máy chiếu (/host)</h3>
+          <ul class="ul">
+            <li><b>Phòng chờ thông minh:</b> Mã QR + đường link chữ, bấm vào QR để <strong>phóng to toàn màn hình</strong> cho hàng ghế xa quét dễ dàng.</li>
+            <li><b>Tự động chuyển góc nhìn theo vòng:</b> Vòng đông (250 cặp) hiện bảng toàn cảnh; từ vòng 1/8 chuyển sang <b>sơ đồ nhánh đối xứng</b>; Bán kết/Chung kết phóng lớn 2 đấu thủ kèm tên BU & lịch sử ván.</li>
+            <li><b>Bục vinh danh Podium:</b> Tổng kết trọn bộ 🥇 Vô địch, 🥈 Á quân, 🥉 Đồng hạng 3, 🏢 Bảng xếp hạng BU (% sống sót) và pháo giấy ăn mừng.</li>
+            <li><b>Âm thanh sự kiện tích hợp:</b> Đếm ngược 3-2-1, nhịp Oẳn–Tù–Tì, lật bài, hòa, tung đồng xu 🍀 và nhạc chiến thắng.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>📱 Điện thoại người chơi (/)</h3>
+          <ul class="ul">
+            <li><b>1 chạm không cần cuộn:</b> Giao diện chọn tay nén gọn vừa khít cả màn hình nhỏ; 3 màu riêng biệt (Đỏ Búa · Xanh Bao · Lá Kéo) tránh bấm nhầm.</li>
+            <li><b>Xác nhận trực tiếp từ server:</b> Hiển thị rõ trạng thái <i>“✓ Server đã ghi nhận”</i>, báo lỗi ngay nếu mạng chập chờn để người chơi bấm lại kịp giờ.</li>
+            <li><b>Theo dõi nhánh cá nhân:</b> Thanh lộ trình vòng đấu (✓ thắng · 🎟️ vé vớt · ✗ dừng bước) + sơ đồ vuốt ngang xem đối thủ kế tiếp.</li>
+            <li><b>Giữ sáng màn hình (Wake Lock):</b> Hạn chế tình trạng điện thoại tự khóa làm rớt kết nối giữa các vòng chờ MC dẫn chương trình.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Hỗ trợ điều khiển MC ngay trên điện thoại / iPad nếu MC di chuyển dưới sân khấu</span>
+      <span>Slide 06 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 7: ĐIỀU HÀNH MC & KỸ THUẬT ==================== -->
+  <section class="slide" data-title="Vận hành MC & Kỹ thuật">
+    <div class="s-top">
+      <span class="s-kicker">06 · CÔNG CỤ MC & ĐỘ ỔN ĐỊNH KỸ THUẬT</span>
+      <span class="s-meta">07 / 09</span>
+    </div>
+    <h2 class="s-title">Sẵn sàng vận hành an toàn cho sự kiện 500 người</h2>
+    <p class="s-lead">Được thiết kế tối ưu hiệu năng cho tải cao đồng thời cung cấp đủ công cụ kiểm soát trực tiếp cho MC và đội kỹ thuật.</p>
+    <div class="s-body">
+      <div class="g2">
+        <div class="box">
+          <h3>🎛️ Bảng điều khiển MC trực quan</h3>
+          <ul class="ul">
+            <li><b>Bảo vệ mật khẩu (`HOST_KEY`):</b> Chỉ MC/BTC có quyền chốt phòng, bắt đầu vòng, lật bài sớm hoặc reset ván mới.</li>
+            <li><b>Quản lý & lọc người chơi:</b> Tìm theo tên/BU và <b>xóa riêng từng người</b> ngay ở phòng chờ (xử lý nhanh nếu có tên không phù hợp).</li>
+            <li><b>Không văng Toàn màn hình:</b> Toàn bộ thao tác chốt/reset dùng hộp thoại xác nhận trong trang; phím <b>H</b> ẩn thanh điều khiển, <b>S</b> mở sơ đồ nhánh.</li>
+            <li><b>Tập dượt & Xuất báo cáo:</b> Thêm/xóa nhanh <b>+10 / +50 bot</b> để test trước giờ G; bấm <strong>📥 Xuất CSV</strong> tải ngay bảng kết quả trao giải.</li>
+          </ul>
+        </div>
+        <div class="box sunk">
+          <h3>⚙️ Kiến trúc nhẹ & đã kiểm thử tải</h3>
+          <ul class="ul">
+            <li><b>Tối ưu tải 500 kết nối đồng thời:</b> Tách luồng cập nhật MC & từng người chơi; băng thông rất nhẹ (chỉ vài KB/lượt), chạy mượt bằng <b>4G cá nhân</b> mà không lo nghẽn Wi-Fi hội trường.</li>
+            <li><b>Không phụ thuộc tài nguyên ngoài:</b> Font chữ Việt hóa đóng gói sẵn trên server — chạy ổn định cả trong mạng nội bộ bị chặn Internet/Google Fonts.</li>
+            <li><b>Chống lỗi thực chiến:</b> Chặn trùng Account, không tự cắt lượt người đang tạm rớt mạng vài giây, tự đồng bộ lại danh sách khi người chơi F5.</li>
+            <li><b>Cấu hình linh hoạt:</b> Tùy chỉnh nhanh danh sách BU, thời gian ra tay, thể thức BO1/BO3/BO5 và số người tối đa.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Đã kiểm thử giả lập 500 người chơi thật qua WebSocket hoàn thành tới Nhà Vô Địch</span>
+      <span>Slide 07 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 8: KỊCH BẢN & GIẢI THƯỞNG ==================== -->
+  <section class="slide" data-title="Kịch bản thời lượng & Giải thưởng">
+    <div class="s-top">
+      <span class="s-kicker">07 · KỊCH BẢN CHƯƠNG TRÌNH GỢI Ý</span>
+      <span class="s-meta">08 / 09</span>
+    </div>
+    <h2 class="s-title">Kịch bản 15–20 phút & Cơ cấu giải thưởng</h2>
+    <p class="s-lead">Thời lượng gọn gàng, dễ lồng ghép vào tiệc công ty / Townhall / Year End Party với hệ thống hạng mục vinh danh có sẵn trên màn hình.</p>
+    <div class="s-body">
+      <div class="g2-wide" style="align-items:stretch">
+        <div class="box">
+          <h3>⏱️ Timeline chạy chương trình mẫu</h3>
+          <table class="tbl">
+            <thead><tr><th>Thời gian</th><th>Hoạt động</th><th>Vai trò MC</th></tr></thead>
+            <tbody>
+              <tr><td class="tm">00–03'</td><td><b>Mở đăng ký</b> (QR toàn màn hình)</td><td>Khuấy động hội trường, đọc tên các BU vào đông nhất</td></tr>
+              <tr><td class="tm">03–09'</td><td><b>Chốt & Vòng loại</b> (V1 → Tứ kết)</td><td>Chạy nhịp nhanh BO1, đọc highlight & Top BU còn sống</td></tr>
+              <tr><td class="tm">09–14'</td><td><b>Bán kết BO3 & Chung kết BO5</b></td><td>Mời Top 4 lên sân khấu, cả hội trường cổ vũ theo BU & Fan Club</td></tr>
+              <tr><td class="tm">14–17'</td><td><b>Vinh danh Podium & Xuất CSV</b></td><td>Trao giải Top 1–2–3, BU trụ lâu nhất (có thể mở thêm ván Boss 6')</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="box gold">
+          <h3>🎁 Hạng mục giải thưởng gợi ý</h3>
+          <ul class="ul">
+            <li>🥇 <b>01 Giải Vô Địch:</b> Người trụ lại cuối cùng trên bục Podium.</li>
+            <li>🥈 <b>01 Giải Á Quân:</b> Đối thủ xuất sắc nhất trận Chung kết.</li>
+            <li>🥉 <b>02 Giải Đồng Hạng 3:</b> 2 thí sinh vào đến Bán kết trên sân khấu.</li>
+            <li>🏢 <b>01 Giải Tập Thể BU:</b> BU có số người trụ lại / tỉ lệ sống sót cao nhất.</li>
+            <li>🎉 <b>Giải phụ (tùy chọn):</b> Quà vui cho Fan Club của Nhà Vô Địch hoặc 1 ván nhanh <i>Đại Chiến Boss</i>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span>Hệ thống tự động tổng hợp đủ tất cả hạng mục trên trong màn hình Podium & file CSV</span>
+      <span>Slide 08 / 09</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 9: CHECKLIST & DEMO ==================== -->
+  <section class="slide" data-title="Chuẩn bị & Demo trực tiếp">
+    <div class="s-top">
+      <span class="s-kicker">08 · TRIỂN KHAI & DEMO TRỰC TIẾP</span>
+      <span class="s-meta">09 / 09</span>
+    </div>
+    <h2 class="s-title">Checklist chuẩn bị trước giờ G & Trải nghiệm ngay</h2>
+    <p class="s-lead">Chỉ cần 5 bước kiểm tra ngắn trước sự kiện là sẵn sàng chạy mượt. BTC có thể bấm trải nghiệm ngay bản chạy thật bên phải.</p>
+    <div class="s-body">
+      <div class="g2-wide" style="align-items:stretch">
+        <div class="box">
+          <h3>✅ Checklist 5 bước cho BTC & Kỹ thuật</h3>
+          <ul class="chk">
+            <li><span class="ic">✓</span><span><b>Chốt cấu hình:</b> Cập nhật đúng danh sách BU công ty và đổi mật khẩu MC (<code>HOST_KEY</code>).</span></li>
+            <li><span class="ic">✓</span><span><b>Đường truyền công cộng (HTTPS):</b> Deploy lên server có tên miền public để 500 nhân sự dùng 4G mượt, không nghẽn Wi-Fi hội trường.</span></li>
+            <li><span class="ic">✓</span><span><b>Tổng duyệt sân khấu:</b> Thử quét QR bằng 2–3 điện thoại thật, kiểm tra âm thanh loa hội trường và chế độ Toàn màn hình LED.</span></li>
+            <li><span class="ic">✓</span><span><b>Làm sạch trước giờ G:</b> Xóa toàn bộ bot tập dượt, giữ laptop MC cắm sạc và tắt chế độ ngủ.</span></li>
+            <li><span class="ic">✓</span><span><b>Phối hợp MC:</b> Chốt kịch bản mời Top 4 lên sân khấu ở Bán kết & chuẩn bị quà trao ngay lúc chiếu Podium.</span></li>
+          </ul>
+        </div>
+        <div class="box gold" style="justify-content:space-between">
+          <div>
+            <h3>🚀 Demo trực tiếp cho BTC</h3>
+            <p style="margin-top:6px">Mở đồng thời Màn hình MC và Giao diện Người chơi (có thể thêm +10 hoặc +50 bot để chạy thử trọn 1 giải đấu trong 1 phút).</p>
+          </div>
+          <div class="demo-actions">
+            <a class="btn" href="/host" target="_blank" rel="noopener">🖥️ Mở Màn hình MC (/host)</a>
+            <a class="btn b-boss" href="/" target="_blank" rel="noopener" style="--c:var(--boss);--d:#4a4fc4;color:#fff">📱 Mở Giao diện Người chơi (/)</a>
+            <button class="btn ghost" id="btn-print-cta" type="button">🖨️ In / Lưu bộ slide thành PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="s-foot">
+      <span><b>Oẳn Tù Tì Sinh Tử</b> · Sẵn sàng trình diễn & góp ý chỉnh sửa theo kịch bản BTC</span>
+      <span>Slide 09 / 09</span>
+    </div>
+  </section>
+
+</main>
+
+<footer id="nav">
+  <div class="nav-group">
+    <button class="nbtn" id="prev" type="button">← Trước</button>
+    <span class="slide-num" id="snum"><b>01</b> / 09</span>
+    <button class="nbtn primary" id="next" type="button">Tiếp →</button>
+  </div>
+  <div class="dots-nav" id="dots" aria-label="Chọn slide"></div>
+  <div class="nav-group">
+    <span class="muted nav-hint" style="font-size:12px;font-weight:600;margin-right:4px" id="stitle"></span>
+    <button class="nbtn" id="btn-print" type="button" title="In hoặc lưu thành PDF">🖨️ Lưu PDF</button>
+    <button class="nbtn" id="btn-fs" type="button" title="Toàn màn hình (Phím F)">⛶ Toàn màn hình</button>
+  </div>
+</footer>
+
+<script>
+const slides = [...document.querySelectorAll('.slide')];
+const total = slides.length;
+let idx = Math.max(0, Math.min(total - 1, (parseInt(location.hash.replace('#', ''), 10) || 1) - 1));
+
+const $prev = document.getElementById('prev');
+const $next = document.getElementById('next');
+const $snum = document.getElementById('snum');
+const $dots = document.getElementById('dots');
+const $stitle = document.getElementById('stitle');
+
+$dots.innerHTML = slides.map((s, i) =>
+  `<button class="dot-btn" type="button" data-i="${i}" title="${i + 1}. ${s.dataset.title || ''}" aria-label="Slide ${i + 1}"></button>`
+).join('');
+const dotBtns = [...$dots.querySelectorAll('.dot-btn')];
+dotBtns.forEach(b => b.onclick = () => go(+b.dataset.i));
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function go(n) {
+  idx = Math.max(0, Math.min(total - 1, n));
+  slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  dotBtns.forEach((b, i) => b.classList.toggle('on', i === idx));
+  $snum.innerHTML = `<b>${pad(idx + 1)}</b> / ${pad(total)}`;
+  $stitle.textContent = slides[idx].dataset.title || '';
+  $prev.disabled = idx === 0;
+  $next.disabled = idx === total - 1;
+  history.replaceState(null, '', '#' + (idx + 1));
+}
+
+$prev.onclick = () => go(idx - 1);
+$next.onclick = () => go(idx + 1);
+document.getElementById('btn-fs').onclick = () => {
+  document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+};
+const doPrint = () => window.print();
+document.getElementById('btn-print').onclick = doPrint;
+document.getElementById('btn-print-cta').onclick = doPrint;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(idx - 1); }
+  else if (e.key === 'Home') { e.preventDefault(); go(0); }
+  else if (e.key === 'End') { e.preventDefault(); go(total - 1); }
+  else if (e.key === 'f' || e.key === 'F') {
+    document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  }
+});
+
+// Vuốt ngang trên điện thoại / máy tính bảng
+let touchX = null;
+document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  touchX = null;
+  if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
+go(idx);
+</script>
+</body>
+</html>
