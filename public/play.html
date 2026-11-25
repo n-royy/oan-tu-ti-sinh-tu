@@ -112,6 +112,40 @@
   .sv { display: inline-flex; align-items: center; gap: 4px; background: var(--sunk); border-radius: 999px; padding: 4px 10px 4px 6px; font-size: .82rem; font-weight: 600; }
   .sv.me { background: var(--gold); color: #1a1033; }
 
+  /* Khán đài tương tác: Cổ vũ, Bình chọn & Tung hỏa mù */
+  .cheer-card { display: grid; gap: 10px; }
+  .cheer-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .cheer-hd b { font-family: var(--display); font-size: 1.02rem; }
+  .cheer-fb { font-size: .78rem; color: var(--gold); font-weight: 700; min-height: 1.1em; }
+  .cheer-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .cheer-btn {
+    min-height: 46px; border-radius: 14px; border: 1px solid var(--line2); background: var(--sunk);
+    font-size: 1.55rem; cursor: pointer; display: grid; place-items: center;
+    transition: transform .1s ease, background .15s, border-color .15s; user-select: none;
+  }
+  .cheer-btn:active, .cheer-btn.pop { transform: scale(.88); background: rgba(255,210,63,.18); border-color: var(--gold); }
+  .spot-match { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .spot-match:first-of-type { padding-top: 0; border-top: 0; }
+  .spot-votes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .vbtn {
+    min-height: 44px; border-radius: 13px; border: 2px solid var(--line2); background: var(--sunk);
+    padding: 8px 10px; font-weight: 700; font-size: .86rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vbtn.a.on { border-color: var(--paper); background: rgba(56,198,255,.2); color: #fff; }
+  .vbtn.b.on { border-color: var(--rock); background: rgba(255,90,110,.22); color: #fff; }
+  .taunt-wrap { display: grid; gap: 6px; }
+  .taunt-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .taunt-bar::-webkit-scrollbar { display: none; }
+  .tchip-btn {
+    flex: none; border-radius: 11px; border: 1px solid var(--line2); background: var(--sunk);
+    padding: 6px 11px; font-size: .78rem; font-weight: 700; color: #dcd7ff; cursor: pointer;
+    white-space: nowrap; transition: all .15s;
+  }
+  .tchip-btn.on { border-color: var(--gold); background: rgba(255,210,63,.16); color: var(--gold); }
+  .boss-speech.sm { font-size: .84rem; padding: 8px 12px; border-radius: 14px; width: 100%; justify-content: center; }
+
   details.rules summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; }
   details.rules summary::-webkit-details-marker { display: none; }
   details.rules summary::after { content: '＋'; color: var(--gold); }
@@ -203,6 +237,16 @@ socket.on('state', s => {
   if (s.phase === 'lobby') SV = null;
   if (s.phase !== 'choosing' || s.choice) { sendingHand = null; pickErr = ''; }
   if (prevPhase !== 'suspense' && s.phase === 'suspense') playSuspenseWords();
+  if (prevPhase !== 'reveal' && s.phase === 'reveal' && s.inStep && s.last) {
+    $app.classList.remove('fx-shake');
+    void $app.offsetWidth;
+    $app.classList.add('fx-shake');
+    setTimeout(() => $app.classList.remove('fx-shake'), 420);
+    if (navigator.vibrate) {
+      const dead = (s.last.matchOver && !s.last.matchWon) || (s.last.boss && s.last.outcome === 'lose');
+      navigator.vibrate(dead ? [70, 40, 110] : 35);
+    }
+  }
   render();
 });
 socket.on('survivors', d => { SV = d; lastKey = ''; render(); });
@@ -370,11 +414,61 @@ function bracketCard(title) {
   </div>`;
 }
 
+function cheerCard(title = '🔥 Bấm cổ vũ bay lên màn hình lớn!') {
+  if (!S?.canCheer) return '';
+  const emojis = ['🔥', '👏', '😱', '⚡', '❤️'];
+  return `<div class="card cheer-card">
+    <div class="cheer-hd"><b>${title}</b><span class="cheer-fb" id="cheer-fb"></span></div>
+    <div class="cheer-row">${emojis.map(e => `<button class="cheer-btn" type="button" data-cheer="${e}" aria-label="Cổ vũ ${e}">${e}</button>`).join('')}</div>
+  </div>`;
+}
+
+function spotlightCard() {
+  const sp = S?.spotlight;
+  if (!sp || !sp.length) return '';
+  return `<div class="card" style="display:grid;gap:12px;text-align:left">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <b style="font-family:var(--display);font-size:1.08rem;color:var(--gold)">📣 Bình chọn ${esc(S.roundLabel)}</b>
+      <span class="muted" style="font-size:.76rem;font-weight:700">Hiện trực tiếp trên LED</span>
+    </div>
+    ${sp.map(m => {
+      const va = m.votes?.a || 0, vb = m.votes?.b || 0, tot = va + vb;
+      const pa = tot ? Math.round((va / tot) * 100) : 50, pb = tot ? 100 - pa : 50;
+      const taunts = [m.tauntA ? `${m.a.av} “${esc(m.tauntA)}”` : '', m.tauntB ? `${m.b.av} “${esc(m.tauntB)}”` : ''].filter(Boolean);
+      return `<div class="spot-match">
+        <div class="hype-wrap">
+          <div class="hype-meta" style="font-size:.8rem">
+            <span>💙 ${esc(m.a.n)} (${m.wa}) · <b>${pa}%</b></span>
+            <span><b>${pb}%</b> · (${m.wb}) ${esc(m.b.n)} ❤️</span>
+          </div>
+          <div class="hype-bar" style="height:10px"><div class="hype-a" style="width:${pa}%"></div><div class="hype-b" style="width:${pb}%"></div></div>
+        </div>
+        ${taunts.length ? `<div style="display:grid;gap:4px">${taunts.map(t => `<div class="taunt-bubble" style="font-size:.78rem;padding:5px 9px">💬 ${t}</div>`).join('')}</div>` : ''}
+        ${m.done
+          ? `<div class="muted" style="text-align:center;font-size:.82rem;font-weight:700">✓ Trận đã kết thúc (${m.wa}–${m.wb})</div>`
+          : `<div class="spot-votes">
+              <button class="vbtn a ${m.myVote === 'a' ? 'on' : ''}" type="button" data-vote="${m.i}:a">💙 ${m.a.av} ${esc(m.a.n)}</button>
+              <button class="vbtn b ${m.myVote === 'b' ? 'on' : ''}" type="button" data-vote="${m.i}:b">❤️ ${m.b.av} ${esc(m.b.n)}</button>
+            </div>`}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function tauntBarHtml() {
+  if (!S?.canTaunt || !S.taunts?.length) return '';
+  return `<div class="taunt-wrap">
+    <div class="eyebrow" style="text-align:center">💬 Tung hỏa mù tâm lý (hiện lên màn hình LED)</div>
+    <div class="taunt-bar">${S.taunts.map((t, i) => `<button class="tchip-btn ${S.myTaunt === t ? 'on' : ''}" type="button" data-taunt="${i}">${esc(t)}</button>`).join('')}</div>
+  </div>`;
+}
+
 function ready() {
   const s = S;
   const tieRule = s.bossTieSurvives ? 'Thua Boss là bị loại, hòa vẫn sống.' : 'Chỉ THẮNG Boss mới sống — thua hoặc hòa đều bị loại!';
   if (s.type === 'boss') return layout(`<div class="screen center">
     <div class="bigicon" style="font-size:5rem;animation:shake 1.2s infinite">🤖</div><h2>ĐẠI CHIẾN BOSS</h2>
+    ${s.bossQuip ? `<div class="boss-speech sm">💬 “${esc(s.bossQuip)}”</div>` : ''}
     <div class="banner boss">Bạn và ${s.total - 1} người khác cùng đấu với Boss. ${tieRule} Ai trụ lại cuối cùng sẽ vô địch!</div>
     <p class="muted">Nhìn lên màn hình lớn, MC sắp bắt đầu…</p></div>`, '');
   const opp = s.opponent;
@@ -402,22 +496,26 @@ function choosing() {
       ? `<div class="banner gold">⚡ HÒA! Cả hai cùng ra ${HANDS[s.last.my]?.e || ''} — đấu lại!</div>`
       : `<div class="banner ${s.last.outcome === 'win' ? 'green' : 'gold'}">${s.last.outcome === 'win' ? '✅ Bạn thắng ván vừa rồi!' : '😬 Bạn thua ván vừa rồi — gỡ lại nào!'}</div>`;
   } else if (boss) {
-    head = `<div class="banner boss">${s.bossTieSurvives ? 'Đánh bại hoặc hòa Boss để sống sót. Thua là bị loại!' : 'Chỉ THẮNG Boss mới sống sót. Thua hoặc hòa đều bị loại!'}</div>`;
+    head = s.bossQuip
+      ? `<div class="boss-speech sm">🤖 “${esc(s.bossQuip)}”</div>`
+      : `<div class="banner boss">${s.bossTieSurvives ? 'Đánh bại hoặc hòa Boss để sống sót. Thua là bị loại!' : 'Chỉ THẮNG Boss mới sống sót. Thua hoặc hòa đều bị loại!'}</div>`;
   }
   const sc = !boss && s.score ? scoreBar(s.score.me, s.score.opp, s.score.need) : '';
   const hs = !boss && s.score && s.score.need > 1 && s.score.hist?.length ? histBar(s.score.hist) : '';
+  const oppBubble = !boss && s.oppTaunt ? `<div class="taunt-bubble" style="font-size:.82rem;justify-content:center">💬 ${esc(opp?.name || 'Đối thủ')}: “${esc(s.oppTaunt)}”</div>` : '';
   const activeHand = s.choice || sendingHand;
   const body = activeHand
     ? `<div class="screen center" style="gap:12px">
         <div class="chosen">${HANDS[activeHand].e}</div>
         <h2>${s.choice ? `Đã chọn ${HANDS[activeHand].name}!` : `Đang gửi ${HANDS[activeHand].name}…`}</h2>
         <span class="lock-badge ${s.choice ? '' : 'sending'}">${s.choice ? '✓ Server đã ghi nhận' : '⏳ Đang xác nhận…'}</span>
+        ${tauntBarHtml()}
         <p class="muted" style="margin:0">Giữ bí mật nhé… đang chờ ${boss ? 'cả hội trường' : 'đối thủ'} 🤫</p>
       </div>`
-    : picks();
+    : `${tauntBarHtml()}${picks()}`;
   return layout(`${head}
     <div class="vs">${fighter(s.me, 'Bạn')}<div style="display:grid;place-items:center">${ring(84)}</div>${fighter(opp)}</div>
-    ${sc}${hs}${body}`, '');
+    ${sc}${hs}${oppBubble}${body}`, '');
 }
 
 function suspense() {
@@ -438,7 +536,7 @@ function verdictOf(l) {
     if (o === 'win') return ['win', 'HẠ GỤC BOSS! 💪', 'Bạn sống sót qua vòng này.'];
     if (o === 'tie') return ['tie', 'HÒA BOSS 😮‍💨', 'Thoát chết trong gang tấc — bạn vẫn sống!'];
     if (o === 'mercy') return ['tie', 'BOSS THA MẠNG 🙏', 'Tất cả đều thua nên không ai bị loại. Đấu lại ngay!'];
-    return ['lose', 'BOSS TIỄN BẠN 🤖', 'Bạn đã bị loại. Ở lại xem ai là người cuối cùng nhé!'];
+    return ['lose', 'BOSS TIỄN BẠN 🤖', 'Bạn đã bị loại. Ở lại thả cảm xúc cổ vũ nhé!'];
   }
   if (l.matchOver) {
     if (l.matchWon) return ['win', l.luck ? 'THẦN MAY MẮN 🍀' : 'CHIẾN THẮNG! 🎉', l.need > 1 ? `Thắng chung cuộc ${l.me}–${l.op}. Bạn đi tiếp!` : 'Bạn đi tiếp vào vòng sau.'];
@@ -453,17 +551,20 @@ function reveal() {
   const s = S, l = s.last;
   const opp = l.boss ? BOSS : s.opponent;
   const [cls, title, sub] = verdictOf(l);
+  const isKo = (l.matchOver && !l.matchWon) || (l.boss && l.outcome === 'lose');
   if (cls === 'win') setTimeout(confetti, 450);
   const hs = !l.boss && s.score && s.score.need > 1 && s.score.hist?.length ? histBar(s.score.hist) : '';
-  return layout(`<div class="screen center" style="gap:18px">
+  return layout(`<div class="screen center" style="gap:16px">
       <div class="clash">
         <div class="side l"><div class="big">${HANDS[l.my].e}</div><div class="who">Bạn${l.auto ? ' · máy chọn hộ' : ''}</div></div>
         <div class="side r"><div class="big">${HANDS[l.opp].e}</div><div class="who">${esc(opp?.name || '')}${l.oppAuto ? ' · máy chọn hộ' : ''}</div></div>
       </div>
       ${!l.boss ? scoreBar(l.me, l.op, l.need) : ''}
       ${hs}
+      ${isKo ? `<span class="ko-stamp" style="font-size:1.3rem">K.O.</span>` : ''}
       <div class="verdict ${cls}">${title}</div>
       <div class="sub">${sub}</div>
+      ${l.boss && s.bossQuip ? `<div class="boss-speech sm">🤖 “${esc(s.bossQuip)}”</div>` : ''}
     </div>`, '');
 }
 
@@ -490,7 +591,7 @@ function waiting() {
       <h2>${won ? `Bạn đã vào ${esc(s.nextRound || 'vòng sau')}!` : bye ? 'Bạn có vé vớt vòng này' : 'Đang chờ…'}</h2>
       <p class="muted" style="margin:0">Các cặp khác vẫn đang thi đấu. Xem sơ đồ để biết đối thủ tiếp theo của bạn!</p>
       ${s.roundProgress ? `<div class="prog" style="width:100%;margin:8px 0 0"><i style="width:${s.roundProgress.done / s.roundProgress.total * 100}%"></i></div><div class="muted" style="font-size:.8rem;font-weight:700">${s.roundProgress.done}/${s.roundProgress.total} cặp đã xong</div>` : ''}
-    </div>`, bracketCard());
+    </div>${spotlightCard()}${cheerCard()}`, bracketCard());
 }
 
 function roundEnd() {
@@ -498,13 +599,13 @@ function roundEnd() {
   if (s.type === 'boss') return layout(`<div class="card hero">
       <div class="bigicon">🛡️</div><h2>BẠN VẪN CÒN SỐNG!</h2>
       <p class="muted" style="margin:0">Còn <b style="color:var(--win)">${s.aliveCount}</b> người trụ lại. ${s.nextAt ? `Vòng tiếp theo sau <b id="nextc">…</b> giây` : 'Chờ MC bắt đầu vòng tiếp theo…'}</p>
-    </div>`, survivorsHtml());
+    </div>${cheerCard()}`, survivorsHtml());
   const opp = s.opponent;
   return layout(`<div class="card hero">
       <div class="eyebrow">Trận tiếp theo · ${esc(s.nextRound)} ${s.score && s.score.need > 1 ? '· ' + s.score.bo : ''}</div>
       <div class="vs" style="width:100%;margin-top:6px">${fighter(s.me, 'Bạn')}<div class="vsx">VS</div>${opp ? fighter(opp) : fighter({ avatar: '❔', name: 'Chờ…' })}</div>
     </div>
-    ${s.nextRound === 'Chung Kết' || s.nextRound === 'Bán Kết' ? `<div class="banner gold">🎤 Bạn đã vào ${esc(s.nextRound)}! Mời lên sân khấu!</div>` : ''}`, bracketCard());
+    ${s.nextRound === 'Chung Kết' || s.nextRound === 'Bán Kết' ? `<div class="banner gold">🎤 Bạn đã vào ${esc(s.nextRound)}! Mời lên sân khấu!</div>` : ''}${cheerCard()}`, bracketCard());
 }
 
 function fanCard() {
@@ -520,8 +621,8 @@ function outScreen() {
   const s = S;
   return layout(`<div class="card hero">
       <div class="bigicon">👻</div><h2>Bạn đã bị loại</h2>
-      <p class="muted" style="margin:0">${s.type === 'boss' ? `Boss đã tiễn bạn. Còn <b style="color:var(--win)">${s.aliveCount}</b> người đang chiến đấu.` : 'Đừng tắt trang — theo dõi sơ đồ và cổ vũ thần tượng của bạn!'}</p>
-    </div>${fanCard()}`, s.type === 'boss' ? survivorsHtml() : bracketCard());
+      <p class="muted" style="margin:0">${s.type === 'boss' ? `Boss đã tiễn bạn. Còn <b style="color:var(--win)">${s.aliveCount}</b> người đang chiến đấu.` : 'Bấm tiếp lửa lên màn hình LED & cổ vũ thần tượng của bạn!'}</p>
+    </div>${spotlightCard()}${cheerCard()}${fanCard()}`, s.type === 'boss' ? survivorsHtml() : bracketCard());
 }
 
 function champion() {
@@ -530,11 +631,12 @@ function champion() {
   if (me || s.championIsIdol) setTimeout(confetti, 200);
   return layout(`<div class="screen center" style="gap:12px">
     <div class="bigicon" style="font-size:4rem">👑</div>
-    <div class="avatar" style="width:110px;height:110px;font-size:3.8rem;box-shadow:0 0 0 4px var(--gold),0 0 50px rgba(255,210,63,.5)">${c ? c.avatar : ''}</div>
+    <div class="avatar" style="width:110px;height:110px;font-size:3.8rem;box-shadow:0 0 0 4px var(--gold), 0 0 50px rgba(255,210,63,.5)">${c ? c.avatar : ''}</div>
     <div class="logo" style="font-size:1.4rem"><span class="l2">${me ? 'BẠN LÀ NHÀ VÔ ĐỊCH!' : 'NHÀ VÔ ĐỊCH'}</span></div>
     <h2 style="font-size:2rem">${esc(c?.name)}</h2><span class="tag">${esc(c?.dept)}</span>
     ${!me && s.championIsIdol ? `<div class="banner green">🎉 Thần tượng của bạn đã vô địch! Bạn thuộc fan club chiến thắng!</div>` : ''}
     ${me ? `<div class="stat-row"><div class="stat"><b>${s.me.wins}</b><span>${s.type === 'boss' ? 'Lần hạ Boss' : 'Trận thắng'}</span></div><div class="stat"><b>${s.total}</b><span>Người tham gia</span></div><div class="stat"><b>${s.myFans}</b><span>Fan hâm mộ</span></div></div>` : ''}
+    <div style="width:100%;margin-top:4px">${cheerCard('🎉 Bắn cảm xúc chúc mừng lên màn hình lớn!')}</div>
   </div>`, s.type === 'duel' ? bracketCard('Nhánh đấu cuối cùng') : '');
 }
 
@@ -591,6 +693,36 @@ function bind() {
         pickErr = res?.error || 'Chưa ghi nhận được, vui lòng thử lại!';
         lastKey = ''; render();
       }
+    });
+  });
+  let lastCheerTap = 0;
+  document.querySelectorAll('[data-cheer]').forEach(b => b.onclick = () => {
+    const now = Date.now();
+    if (now - lastCheerTap < 400) return;
+    lastCheerTap = now;
+    const emoji = b.dataset.cheer;
+    if (navigator.vibrate) navigator.vibrate(14);
+    b.classList.add('pop');
+    setTimeout(() => b.classList.remove('pop'), 150);
+    const side = S?.spotlight?.length === 1 ? S.spotlight[0].myVote : null;
+    socket.emit('cheer', { emoji, side });
+    const fb = document.getElementById('cheer-fb');
+    if (fb) {
+      fb.textContent = `${emoji} Đã bay lên màn hình lớn!`;
+      clearTimeout(fb._t);
+      fb._t = setTimeout(() => { if (fb) fb.textContent = ''; }, 1400);
+    }
+  });
+  document.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => {
+    const [mi, side] = b.dataset.vote.split(':');
+    if (navigator.vibrate) navigator.vibrate(18);
+    socket.emit('vote', { matchIdx: +mi, side });
+  });
+  document.querySelectorAll('[data-taunt]').forEach(b => b.onclick = () => {
+    const idx = +b.dataset.taunt;
+    if (navigator.vibrate) navigator.vibrate(15);
+    socket.emit('taunt', idx, r => {
+      if (r?.ok && S) { S = { ...S, myTaunt: r.text }; lastKey = ''; render(); }
     });
   });
   const lv = document.getElementById('leave');

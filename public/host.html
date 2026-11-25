@@ -107,14 +107,22 @@
   .bm.solo .avatar { width: clamp(90px, 11vw, 220px); height: clamp(90px, 11vw, 220px); font-size: clamp(50px, 6.5vw, 125px); box-shadow: 0 0 0 5px var(--gold), 0 0 40px rgba(255,210,63,.35); }
   .bm .nm { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 2.2vw, 46px); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bm.solo .nm { font-size: clamp(28px, 3.3vw, 68px); }
-  .bm .dp { color: var(--gold); font-weight: 700; font-size: clamp(12px, 1.05vw, 20px); margin: .25vh 0 .7vh; opacity: .88; letter-spacing: .03em; }
-  .bm .mid { text-align: center; display: grid; gap: .9vh; justify-items: center; min-width: 14vw; }
+  .bm .dp { color: var(--gold); font-weight: 700; font-size: clamp(12px, 1.05vw, 20px); margin: .25vh 0 .4vh; opacity: .9; letter-spacing: .03em; }
+  .bm .fmeta { display: flex; flex-wrap: wrap; gap: .6vw; align-items: center; margin-bottom: .6vh; font-size: clamp(11px, .86vw, 15px); font-weight: 700; color: #dcd7ff; font-variant-numeric: tabular-nums; }
+  .bm .pl.right .fmeta { justify-content: flex-end; }
+  .bm .fmeta span { opacity: .9; }
+  .bm .fmeta .fan-c { color: var(--gold); }
+  .bm .bm-taunt { margin-top: .7vh; }
+  .bm .pl.right .bm-taunt { display: flex; justify-content: flex-end; }
+  .bm .mid { text-align: center; display: grid; gap: .8vh; justify-items: center; min-width: 14vw; }
   .bm .sc { font-family: var(--display); font-weight: 800; font-size: clamp(36px, 4.2vw, 92px); line-height: 1; font-variant-numeric: tabular-nums; }
   .bm .hands { display: flex; gap: 2vw; font-size: clamp(40px, 4.8vw, 105px); }
   .bm .dots { display: flex; gap: .5vw; }
   .bm .dots i { width: clamp(14px, 1.3vw, 26px); height: clamp(14px, 1.3vw, 26px); border-radius: 50%; background: rgba(255,255,255,.15); }
   .bm .dots i.on { background: var(--gold); box-shadow: 0 0 12px var(--gold); }
-  .bm.won-a .pl.right, .bm.won-b .pl.left { opacity: .42; filter: grayscale(.75); }
+  .bm.won-a .pl.right, .bm.won-b .pl.left { opacity: .52; filter: grayscale(.65); }
+  .bm.won-a .pl.left .avatar, .bm.won-b .pl.right .avatar { box-shadow: 0 0 0 5px var(--gold), 0 0 44px rgba(255,210,63,.5); }
+  .bm-foot { grid-column: 1 / -1; padding-top: 1.1vh; border-top: 1px solid var(--line); }
   .crown { color: var(--gold); }
   .bmhead { text-align: center; font-family: var(--display); font-weight: 800; font-size: clamp(16px, 1.6vw, 32px); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
   .bmhead.gold { color: var(--gold); }
@@ -209,8 +217,9 @@
     .tstrip { flex-wrap: wrap; }
     .bm { grid-template-columns: 1fr; text-align: center; }
     .bm .pl, .bm .pl.right { flex-direction: column; text-align: center; }
-    .bm .pl.right .dots, .bm .dots { justify-content: center; }
+    .bm .pl.right .dots, .bm .dots, .bm .fmeta, .bm .pl.right .fmeta, .bm .pl.right .bm-taunt { justify-content: center; }
     .bm .mhist { max-width: 100%; }
+    .awards-grid { grid-template-columns: 1fr; }
     .dock { position: sticky; bottom: 8px; gap: 8px; }
     .dock .hint { display: none; }
   }
@@ -237,6 +246,7 @@
   <div class="dock" id="dock"></div>
 </div>
 
+<div id="cheer-layer" aria-hidden="true"></div>
 <div id="qrzoom" class="hidden" aria-label="Phóng to mã QR"></div>
 <div id="modal" class="hidden"></div>
 
@@ -269,15 +279,53 @@ socket.on('host', s => {
   if (prev !== 'choosing' && s.phase === 'choosing') sfx('start');
   if (prev !== 'suspense' && s.phase === 'suspense') playSuspenseBeats();
   if ((prev === 'choosing' || prev === 'suspense') && s.phase === 'reveal') {
-    if (s.type === 'boss') sfx('boss');
-    else if (s.reveal?.highlights?.some(h => h.luck)) sfx('luck');
-    else if (s.reveal?.eliminated === 0 && s.reveal?.ties > 0) sfx('tie');
-    else sfx('reveal');
+    if (s.type === 'boss') { sfx('boss'); stageImpact('boss'); }
+    else if (s.reveal?.highlights?.some(h => h.luck)) { sfx('luck'); stageImpact('hit'); }
+    else if (s.reveal?.eliminated === 0 && s.reveal?.ties > 0) { sfx('tie'); }
+    else { sfx(s.reveal?.eliminated > 0 ? 'ko' : 'reveal'); stageImpact(s.reveal?.eliminated > 0 ? 'hit' : 'win'); }
   }
-  if (s.phase === 'champion' && prev !== 'champion') { sfx('win'); confettiLoop(); }
+  if (s.phase === 'champion' && prev !== 'champion') { sfx('win'); stageImpact('win'); confettiLoop(); }
   render();
 });
+socket.on('cheers', batch => spawnCheers(batch));
 window.addEventListener('resize', () => { stageKey = ''; render(); });
+
+function stageImpact(kind = 'hit') {
+  const st = $('stage');
+  if (st) {
+    st.classList.remove('fx-shake');
+    void st.offsetWidth;
+    st.classList.add('fx-shake');
+    setTimeout(() => st.classList.remove('fx-shake'), 420);
+  }
+  const fl = document.createElement('div');
+  fl.className = 'fx-flash' + (kind === 'win' ? ' win' : kind === 'boss' ? ' boss' : '');
+  document.body.appendChild(fl);
+  setTimeout(() => fl.remove(), 480);
+}
+
+function spawnCheers(batch) {
+  const layer = $('cheer-layer');
+  if (!layer || !Array.isArray(batch)) return;
+  for (const item of batch) {
+    if (layer.childElementCount >= 45) break;
+    const el = document.createElement('span');
+    el.className = 'cheer-pop';
+    const leftPct = item.side === 'a' ? (6 + Math.random() * 28)
+      : item.side === 'b' ? (66 + Math.random() * 28)
+      : (8 + Math.random() * 84);
+    const dx1 = ((Math.random() - .5) * 44).toFixed(0) + 'px';
+    const dx2 = ((Math.random() - .5) * 90).toFixed(0) + 'px';
+    const dur = (2.1 + Math.random() * 1.1).toFixed(2) + 's';
+    el.style.left = leftPct.toFixed(1) + 'vw';
+    el.style.setProperty('--dx1', dx1);
+    el.style.setProperty('--dx2', dx2);
+    el.style.setProperty('--dur', dur);
+    el.innerHTML = `${esc(item.e)}${item.av ? `<span class="c-av">${esc(item.av)}</span>` : ''}`;
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+  }
+}
 
 // ---------- Âm thanh ----------
 let ac;
@@ -289,21 +337,53 @@ function unlockAudio() {
 }
 document.addEventListener('pointerdown', unlockAudio, { passive: true });
 
+function playDrumHit(vol = .16, pitch = 135) {
+  if (muted) return;
+  try {
+    unlockAudio();
+    const t = ac.currentTime;
+    // low tom thump
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(pitch, t);
+    o.frequency.exponentialRampToValueAtTime(48, t + .12);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.001, t + .14);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + .15);
+    // crisp snare noise burst
+    const len = Math.floor(ac.sampleRate * .07);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * .35));
+    const ns = ac.createBufferSource(), f = ac.createBiquadFilter(), ng = ac.createGain();
+    ns.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1800;
+    ng.gain.setValueAtTime(vol * .7, t);
+    ng.gain.exponentialRampToValueAtTime(.001, t + .07);
+    ns.connect(f); f.connect(ng); ng.connect(ac.destination);
+    ns.start(t);
+  } catch {}
+}
+
 function sfx(kind) {
   if (muted) return;
   try {
     unlockAudio();
-    const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    const t = ac.currentTime;
+    if (kind === 'tick') { playDrumHit(.13, 165); }
+    if (kind === 'beat') { playDrumHit(.22, 120); return; }
+    if (kind === 'ko') { playDrumHit(.28, 95); }
+    const o = ac.createOscillator(), g = ac.createGain();
     o.connect(g); g.connect(ac.destination);
     const presets = {
-      tick:   { type: 'square',   vol: .15, seq: [[880, .07]] },
+      tick:   { type: 'square',   vol: .11, seq: [[880, .06]] },
       start:  { type: 'triangle', vol: .2,  seq: [[440, .08], [554, .08], [659, .14]] },
-      beat:   { type: 'triangle', vol: .22, seq: [[220, .09], [165, .07]] },
-      reveal: { type: 'triangle', vol: .22, seq: [[300, .07], [600, .07], [900, .16]] },
+      reveal: { type: 'triangle', vol: .22, seq: [[330, .07], [660, .07], [990, .16]] },
+      ko:     { type: 'triangle', vol: .24, seq: [[280, .06], [560, .07], [840, .18]] },
       tie:    { type: 'sawtooth', vol: .14, seq: [[466, .1], [440, .12], [466, .16]] },
       luck:   { type: 'sine',     vol: .2,  seq: [[784, .08], [988, .08], [1175, .08], [1568, .2]] },
       boss:   { type: 'sawtooth', vol: .18, seq: [[196, .12], [147, .12], [294, .22]] },
-      win:    { type: 'triangle', vol: .22, seq: [[523, .14], [659, .14], [784, .14], [1046, .45]] },
+      win:    { type: 'triangle', vol: .24, seq: [[523, .11], [659, .11], [784, .11], [1046, .16], [784, .09], [1046, .48]] },
     };
     const p = presets[kind] || presets.reveal;
     let at = t;
@@ -329,7 +409,7 @@ function playSuspenseBeats() {
   words.forEach((w, i) => {
     suspTimers.push(setTimeout(() => {
       if (!S || S.phase !== 'suspense') return;
-      sfx('beat');
+      playDrumHit(.22 + i * .03, 115 + i * 22);
       document.querySelectorAll('.suspense-word').forEach(el => {
         el.textContent = w;
         el.style.animation = 'none';
@@ -435,6 +515,10 @@ function exportCsv() {
     if (pd?.champion) rows.push(['Vô địch', pd.champion.name, pd.champion.dept, pd.champion.wins, pd.champion.fans]);
     if (pd?.runnerUp) rows.push(['Á quân', pd.runnerUp.name, pd.runnerUp.dept, pd.runnerUp.wins, '']);
     if (pd?.thirds?.length) pd.thirds.forEach(t => rows.push(['Đồng hạng 3', t.name, t.dept, t.wins, '']));
+    if (pd?.awards?.length) {
+      rows.push([], ['Danh hiệu đặc biệt', 'Người nhận', 'BU', 'Thành tích']);
+      pd.awards.forEach(a => rows.push([a.title, a.who.name, a.who.dept, a.detail]));
+    }
     rows.push([], ['Xếp hạng BU', 'BU', 'Còn lại', 'Tổng tham gia', 'Tỉ lệ sống (%)', 'Tổng thắng']);
     res.depts.forEach((d, i) => rows.push([i + 1, d.dept, d.alive, d.total, d.rate + '%', d.wins]));
     rows.push([], ['Danh sách người chơi', 'BU', 'Loại', 'Trạng thái', 'Số thắng', 'Vòng dừng', 'Fan club']);
@@ -473,7 +557,7 @@ function render() {
     : `<div><span class="k">Còn lại</span><span class="v alive">${S.alive}</span></div><div><span class="k">Tham gia</span><span class="v">${S.total}</span></div>`;
 
   const v = view();
-  const big = v === 'big' ? JSON.stringify(S.bracket.cur.matches) : '';
+  const big = v === 'big' ? JSON.stringify(S.bracket.cur.matches.map(m => ({ ...m, votes: null }))) : '';
   const key = [v, S.phase, S.type, S.roundNo, S.phase === 'lobby' ? S.total : '', S.phase === 'reveal' || S.phase === 'suspense' ? S.step : '', big, narrow()].join('|');
   if (key !== stageKey) {
     stageKey = key;
@@ -639,12 +723,41 @@ function boardHtml() {
   return `<div class="board" id="board">${ms.map(m => Bracket.card(m, { hands: false })).join('')}</div>`;
 }
 
+function hypeBarHtml(m) {
+  const va = m.votes?.a || 0, vb = m.votes?.b || 0, tot = va + vb;
+  const pa = tot ? Math.round((va / tot) * 100) : 50;
+  const pb = tot ? 100 - pa : 50;
+  const label = tot
+    ? `<span>💙 ${esc(m.a?.n)}: <b>${pa}%</b> (${va})</span><span class="muted">📣 Bình chọn khán đài</span><span><b>${pb}%</b> (${vb}) ${esc(m.b?.n)} ❤️</span>`
+    : `<span class="muted">💙 ${esc(m.a?.n)}</span><span class="muted">📱 Khán giả đang bình chọn trên điện thoại…</span><span class="muted">${esc(m.b?.n)} ❤️</span>`;
+  return `<div class="hype-wrap" data-hype-m="${m.i}">
+    <div class="hype-meta">${label}</div>
+    <div class="hype-bar"><div class="hype-a" style="width:${pa}%"></div><div class="hype-b" style="width:${pb}%"></div></div>
+  </div>`;
+}
+
 function bigMatches() {
   const r = S.bracket.cur, rv = S.phase === 'reveal', sp = S.phase === 'suspense';
   const solo = r.matches.length === 1;
   const need = r.need || (r.bo === 'BO5' ? 3 : r.bo === 'BO3' ? 2 : 1);
   const dots = n => `<div class="dots">${Array.from({ length: need }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>`;
-  const pl = (x, side, m) => `<div class="pl ${side === 'a' ? 'left' : 'right'}"><div class="avatar">${x.av}</div><div style="min-width:0"><div class="nm">${m.w === side ? '<span class="crown">👑 </span>' : ''}${esc(x.n)}</div>${x.dp ? `<div class="dp">${esc(x.dp)}</div>` : ''}${dots(side === 'a' ? m.wa : m.wb)}</div></div>`;
+  const pl = (x, side, m) => {
+    const isLoser = m.done && m.w && m.w !== side;
+    const taunt = side === 'a' ? m.tauntA : m.tauntB;
+    const meta = [];
+    if (x.fans > 0) meta.push(`<span class="fan-c">📣 ${x.fans} fan</span>`);
+    if (x.wins > 0) meta.push(`<span>🔥 ${x.wins} trận bất bại</span>`);
+    return `<div class="pl ${side === 'a' ? 'left' : 'right'}">
+      <div class="avatar">${x.av}</div>
+      <div style="min-width:0">
+        <div class="nm">${m.w === side ? '<span class="crown">👑 </span>' : ''}${esc(x.n)}${isLoser ? ' <span class="ko-stamp" style="font-size:.46em;vertical-align:middle">K.O.</span>' : ''}</div>
+        ${x.dp ? `<div class="dp">${esc(x.dp)}</div>` : ''}
+        ${meta.length ? `<div class="fmeta">${meta.join('<span>·</span>')}</div>` : ''}
+        ${dots(side === 'a' ? m.wa : m.wb)}
+        ${taunt ? `<div class="bm-taunt"><span class="taunt-bubble">💬 “${esc(taunt)}”</span></div>` : ''}
+      </div>
+    </div>`;
+  };
   return `<div class="bigmatches">
     ${solo ? `<div class="bmhead gold">🏆 Chung Kết · ${r.bo} — ai thắng ${need} ván trước là Nhà Vô Địch</div>` : `<div class="bmhead">${esc(r.name)} · ${r.bo} — thắng ${need} ván để vào Chung Kết</div>`}
     ${r.matches.map(m => `<div class="bm ${solo ? 'solo' : ''} ${m.w ? 'won-' + m.w : ''}">
@@ -658,6 +771,7 @@ function bigMatches() {
         ${m.done ? `<div class="tag" style="color:var(--win)">✓ Đã phân thắng bại</div>` : ''}
       </div>
       ${pl(m.b, 'b', m)}
+      <div class="bm-foot">${hypeBarHtml(m)}</div>
     </div>`).join('')}
   </div>`;
 }
@@ -707,11 +821,13 @@ function layoutStage() {
 // ---------- Đại Chiến Boss ----------
 function bossStage() {
   const tieRule = S.bossTieSurvives ? 'Thua Boss là bị loại, hòa vẫn sống.' : 'Chỉ THẮNG Boss mới sống — thua hoặc hòa đều bị loại!';
+  const quip = S.bossQuip ? `<div class="boss-speech">💬 “${esc(S.bossQuip)}”</div>` : '';
   if (S.phase === 'ready') return `<div class="bossbig">
     <div class="bh bosswait">🤖</div><div class="bigtitle">ĐẠI CHIẾN BOSS</div>
+    ${quip}
     <div class="tip" style="max-width:60vw">${S.total} người cùng đấu với Boss. ${tieRule} Đấu liên tục cho đến khi chỉ còn <b style="color:var(--gold)">1 người</b>!</div></div>`;
   if (S.phase === 'choosing') return `<div class="split" style="grid-template-columns:1fr 1fr">
-    <div class="panel bossbig"><div class="bh bosswait">🤖</div><div class="bigtitle" style="font-size:clamp(26px,3vw,60px)">Boss đang chọn…</div></div>
+    <div class="panel bossbig"><div class="bh bosswait">🤖</div><div class="bigtitle" style="font-size:clamp(26px,3vw,60px)">Boss đang chọn…</div>${quip}</div>
     <div class="side" style="align-content:center">
       <div class="panel" style="display:grid;place-items:center;gap:2vh"><div class="bigtitle">${esc(S.roundLabel)}</div>${ringHtml('min(18vw,32vh)')}</div>
       <div class="panel"><div class="ptitle"><span>Đã ra tay</span><span><span id="chosen">${S.chosen}</span>/<span id="parts">${S.participants}</span></span></div><div class="progress"><i id="prog" style="width:${S.participants ? S.chosen / S.participants * 100 : 0}%"></i></div></div>
@@ -729,6 +845,7 @@ function bossStage() {
       : `Chỉ ai ra ${HANDS[beats].e} mới sống sót!`;
     return `<div class="split" style="grid-template-columns:1fr 1fr">
       <div class="panel bossbig"><div class="ptitle">Boss đã ra</div><div class="bh">${HANDS[r.bossHand].e}</div><div class="bigtitle">BOSS RA ${HANDS[r.bossHand].n.toUpperCase()}!</div>
+        ${quip}
         ${r.mercy ? `<div class="tip">🙏 Tất cả đều thua — Boss tha mạng, đấu lại ngay!</div>` : `<div class="tip">${hint}</div>`}</div>
       <div class="side" style="align-content:center">
         <div class="kpis"><div class="kpi"><b style="color:var(--lose)">−${r.eliminated}</b><span>người bị Boss tiễn</span></div><div class="kpi"><b style="color:var(--win)">${S.alive}</b><span>người còn sống</span></div></div>
@@ -758,6 +875,17 @@ function champion() {
   const runners = [];
   if (pd.runnerUp) runners.push(medalCard('silver', '🥈', 'Á quân', pd.runnerUp));
   if (pd.thirds?.length) pd.thirds.forEach(t => runners.push(medalCard('bronze', '🥉', S.type === 'duel' ? 'Đồng hạng 3' : 'Top trụ lại', t)));
+  const awardsHtml = pd.awards?.length ? `<div class="panel">
+    <div class="ptitle">✨ Danh hiệu đặc biệt</div>
+    <div class="awards-grid">${pd.awards.map(a => `<div class="award-item">
+      <div class="award-ic">${a.icon}</div>
+      <div style="min-width:0">
+        <div class="award-lb">${esc(a.title)}</div>
+        <div class="award-nm">${a.who.avatar} ${esc(a.who.name)}</div>
+        <div class="award-dt">${esc(a.detail)}</div>
+      </div>
+    </div>`).join('')}</div>
+  </div>` : '';
 
   return `<div class="podium">
     <div class="panel podium-main">
@@ -772,15 +900,15 @@ function champion() {
       </div>
       ${runners.length ? `<div class="podium-sub">${runners.join('')}</div>` : ''}
     </div>
-    <div class="side" style="align-content:stretch;grid-template-rows:1fr auto">
+    <div class="side" style="align-content:stretch">
       <div class="panel">
         <div class="ptitle">🏢 Bảng xếp hạng BU chung cuộc</div>
-        ${deptBars((pd.topDepts || S.depts).slice(0, 6), 'alive')}
+        ${deptBars((pd.topDepts || S.depts).slice(0, 5), 'alive')}
       </div>
-      <div class="panel" style="display:grid;gap:1.2vh">
-        <div class="ptitle" style="margin:0">📋 Tổng kết sự kiện</div>
-        <div class="muted" style="font-size:clamp(12px,.95vw,17px);line-height:1.45">Tải danh sách Top 1–2–3, thứ hạng BU và thành tích từng người chơi định dạng CSV (mở trực tiếp bằng Excel).</div>
-        <button class="btn block" id="btn-export" style="font-size:clamp(13px,1.05vw,19px)">📥 Xuất kết quả (CSV)</button>
+      ${awardsHtml}
+      <div class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:1vw;padding:1.4vh 1.2vw">
+        <div style="min-width:0"><div class="ptitle" style="margin:0">📋 Báo cáo sự kiện</div><div class="muted" style="font-size:clamp(11px,.82vw,14px)">Top 1–2–3 · BU · Danh hiệu · Toàn bộ người chơi</div></div>
+        <button class="btn" id="btn-export" style="font-size:clamp(12px,.95vw,17px);white-space:nowrap">📥 Xuất CSV</button>
       </div>
     </div>
   </div>`;
@@ -796,6 +924,12 @@ function live() {
   if (ch) { ch.textContent = S.chosen; $('parts').textContent = S.participants; $('prog').style.width = (S.participants ? S.chosen / S.participants * 100 : 0) + '%'; }
   const cur = S.bracket?.cur;
   if (cur && $('rdone')) $('rdone').textContent = `${cur.done}/${cur.total}` + ($('bview') ? ' cặp xong' : '');
+  if (cur && cur.matches.length <= 2) {
+    for (const m of cur.matches) {
+      const hw = document.querySelector(`[data-hype-m="${m.i}"]`);
+      if (hw) hw.outerHTML = hypeBarHtml(m);
+    }
+  }
   if (cur && cur.done !== lastBoardDone) {
     lastBoardDone = cur.done;
     const tb = $('tbody');

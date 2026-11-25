@@ -52,6 +52,23 @@ const randHand = () => HANDS[(Math.random() * 3) | 0];
 const duel = (a, b) => (a === b ? 0 : BEATS[a] === b ? 1 : -1); // 1 = a thắng
 const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
 const TYPE_LABEL = { duel: 'Đấu Tay Đôi', boss: 'Đại Chiến Boss' };
+const CHEERS = ['🔥', '👏', '😱', '⚡', '❤️'];
+const TAUNTS = [
+  'Ván này tôi ra Búa đó ✊',
+  'Cẩn thận cái Bao của tôi ✋',
+  'Kéo sắc lắm, dám không? ✌️',
+  'Đọc vị xong hết rồi 😎',
+  'Hòa nữa đi cho căng! ⚡',
+  'Lần này chơi tâm lý nha 😏',
+];
+const BOSS_CHOOSE_QUIPS = [
+  'Hệ thống đang nóng máy với BÚA ✊… hay là tôi đang lừa bạn?',
+  'Cảm biến báo 60% hội trường sắp ra BAO ✋ đấy!',
+  'Vòng này tôi nhắm mắt chọn đại, cẩn thận KÉO ✌️ nhé!',
+  'Đừng nhìn người bên cạnh, họ cũng sắp bị loại thôi 😏',
+  'Tôi đã phân tích dữ liệu vòng trước của các bạn rồi…',
+  'Ai đang run tay nào? Còn vài giây cuối thôi đấy!',
+];
 
 // ---------- Trạng thái ----------
 const players = new Map(); // pid -> player
@@ -63,14 +80,18 @@ function freshGame() {
     locked: false,
     cur: 0,             // vòng đang/sắp đấu (index)
     step: 0,
+    stepStartAt: 0,
     deadline: 0, stepMs: 0,
     suspenseEnds: 0,
     participants: new Set(),
     rounds: [],         // nhánh đấu: rounds[r] = [match]
     reveal: null,
     bossHand: null,
+    bossQuip: '',
     bossLog: [],        // [{round, hand, before, after, mercy}]
     lastSurvivors: null, // { round, list: [[id, name, avatar, dept]] }
+    taunts: new Map(),      // pid -> { text, at }
+    crowdVotes: new Map(),  // matchIdx -> Map<pid, 'a' | 'b'>
     auto: CFG.BOSS_NEXT_SECONDS > 0,
     nextAt: 0,
     championId: null,
@@ -84,7 +105,11 @@ const newId = () => (Date.now().toString(36) + (seq++).toString(36) + Math.rando
 const clean = (s, n) => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n);
 
 function resetPlayer(p) {
-  Object.assign(p, { alive: true, fanOf: null, wins: 0, choice: null, choiceAt: 0, last: null, path: [], elimRound: null });
+  Object.assign(p, {
+    alive: true, fanOf: null, wins: 0, choice: null, choiceAt: 0, last: null, path: [], elimRound: null,
+    manualHands: { rock: 0, paper: 0, scissors: 0 }, manualCount: 0,
+    reactSum: 0, reactCnt: 0, tiesSurvived: 0, luckWins: 0, maxMatchGames: 0, cheersSent: 0,
+  });
 }
 function makePlayer({ name, dept, avatar, bot }) {
   const p = { id: newId(), name, dept, avatar, bot: !!bot, socketId: null, connected: !!bot };
@@ -172,8 +197,11 @@ function setup(type) {
   G.type = type;
   G.locked = true;
   G.startCount = players.size;
+  G.taunts.clear();
+  G.crowdVotes.clear();
   for (const p of players.values()) resetPlayer(p);
   if (type === 'duel') buildBracket();
+  G.bossQuip = type === 'boss' ? 'Chào mừng tới đấu trường sinh tử! Ai đủ bản lĩnh sống sót qua tay ta?' : '';
   G.cur = 0;
   G.phase = 'ready';
   dirty();
@@ -185,6 +213,7 @@ function startRound() {
   G.step = 0;
   G.reveal = null;
   G.nextAt = 0;
+  G.taunts.clear();
   for (const p of players.values()) { p.choice = null; p.last = null; }
   if (G.phase === 'roundEnd' && G.type === 'boss') G.cur += 1;
   beginStep();
@@ -194,24 +223,32 @@ function beginStep() {
   G.phase = 'choosing';
   G.bossHand = null;
   G.suspenseEnds = 0;
+  G.taunts.clear();
   G.participants = new Set();
   if (G.type === 'duel') {
     for (const m of G.rounds[G.cur]) if (!m.done) { G.participants.add(m.a); G.participants.add(m.b); }
   } else {
     for (const p of alivePlayers()) G.participants.add(p.id);
+    G.bossQuip = BOSS_CHOOSE_QUIPS[(G.cur + G.step + ((Math.random() * BOSS_CHOOSE_QUIPS.length) | 0)) % BOSS_CHOOSE_QUIPS.length];
   }
   for (const id of G.participants) { const p = players.get(id); p.choice = null; p.choiceAt = 0; }
   const secs = G.step === 0 ? CFG.CHOICE_SECONDS : CFG.NEXT_GAME_SECONDS;
+  G.stepStartAt = Date.now();
   G.stepMs = secs * 1000;
-  G.deadline = Date.now() + G.stepMs;
+  G.deadline = G.stepStartAt + G.stepMs;
   stepTimer = setTimeout(triggerReveal, G.stepMs + 400);
   for (const id of G.participants) {
     const p = players.get(id);
     if (!p.bot) continue;
     botTimers.push(setTimeout(() => {
       if (G.phase === 'choosing' && !p.choice) {
+        const now = Date.now();
         p.choice = randHand();
-        p.choiceAt = Date.now();
+        p.choiceAt = now;
+        if (G.stepStartAt > 0) {
+          p.reactSum += Math.max(50, Math.min(now - G.stepStartAt, G.stepMs || 15000));
+          p.reactCnt += 1;
+        }
         dirtyHost();
         maybeEarlyResolve();
       }
@@ -261,19 +298,28 @@ function resolveStep() {
       if (m.done) continue;
       const A = players.get(m.a), B = players.get(m.b);
       const ca = pick(A), cb = pick(B);
+      if (!ca.auto) { A.manualHands[ca.hand]++; A.manualCount++; }
+      if (!cb.auto) { B.manualHands[cb.hand]++; B.manualCount++; }
       dist[ca.hand]++; dist[cb.hand]++;
       let r = duel(ca.hand, cb.hand), luck = false;
       if (r === 0) {
         m.ties += 1; rev.ties++;
+        A.tiesSurvived++; B.tiesSurvived++;
         if (m.ties >= CFG.TIE_LIMIT) { r = Math.random() < 0.5 ? 1 : -1; luck = true; }
       }
-      if (r !== 0) { m.ties = 0; if (r === 1) m.wa++; else m.wb++; }
+      if (r !== 0) {
+        m.ties = 0;
+        if (r === 1) { m.wa++; if (luck) A.luckWins++; }
+        else { m.wb++; if (luck) B.luckWins++; }
+      }
       m.hist.push({ a: ca.hand, b: cb.hand, r, luck });
       if (m.wa >= need || m.wb >= need) {
         m.done = true; m.luck = luck;
         const W = m.wa >= need ? A : B, L = W === A ? B : A;
         m.winner = W.id; m.loser = L.id;
-        W.wins++; eliminate(L, W.id); advance(m);
+        W.wins++;
+        if (m.hist.length > W.maxMatchGames) W.maxMatchGames = m.hist.length;
+        eliminate(L, W.id); advance(m);
         rev.eliminated++; rev.matchesDone++;
         hl.push({ w: W.id, l: L.id, wh: W === A ? ca.hand : cb.hand, lh: W === A ? cb.hand : ca.hand, luck, sw: Math.max(m.wa, m.wb), sl: Math.min(m.wa, m.wb) });
       }
@@ -287,16 +333,29 @@ function resolveStep() {
     const boss = randHand();
     G.bossHand = boss; rev.bossHand = boss;
     const before = G.participants.size;
-    const res = [...G.participants].map(id => { const p = players.get(id); const c = pick(p); dist[c.hand]++; return { p, c, r: duel(c.hand, boss) }; });
+    const res = [...G.participants].map(id => {
+      const p = players.get(id);
+      const c = pick(p);
+      if (!c.auto) { p.manualHands[c.hand]++; p.manualCount++; }
+      dist[c.hand]++;
+      return { p, c, r: duel(c.hand, boss) };
+    });
     const dies = x => x.r === -1 || (x.r === 0 && !CFG.BOSS_TIE_SURVIVES);
     if (res.every(dies)) rev.mercy = true; // ai cũng thua thì Boss tha, đấu lại
     for (const x of res) {
       const outcome = rev.mercy ? 'mercy' : x.r === 1 ? 'win' : dies(x) ? 'lose' : 'tie';
       x.p.last = { my: x.c.hand, opp: boss, auto: x.c.auto, outcome, boss: true };
       if (x.r === 1) x.p.wins++;
+      if (outcome === 'tie') x.p.tiesSurvived++;
       if (outcome === 'lose') { eliminate(x.p, 'BOSS'); rev.eliminated++; }
     }
-    G.bossLog.push({ round: G.cur + 1, hand: boss, before, after: alivePlayers().length, mercy: rev.mercy });
+    const afterAlive = alivePlayers().length;
+    if (rev.mercy) G.bossQuip = 'Quá phũ! Cả hội trường cùng sập bẫy — Boss tha cho đấu lại ngay!';
+    else if (rev.eliminated === 0) G.bossQuip = 'Không loại được ai luôn?! Các bạn đọc bài tôi rồi à! 😤';
+    else if (before > 0 && rev.eliminated / before >= 0.45) G.bossQuip = `Càn quét! ${rev.eliminated} chiến binh vừa lên bảng đếm số! 💥`;
+    else if (afterAlive <= 3) G.bossQuip = `Chỉ còn ${afterAlive} người! Trận sinh tử thực sự bắt đầu! 🔥`;
+    else G.bossQuip = `${rev.eliminated} người rời cuộc chơi. ${afterAlive} chiến binh còn lại khá lắm!`;
+    G.bossLog.push({ round: G.cur + 1, hand: boss, before, after: afterAlive, mercy: rev.mercy });
   }
 
   G.reveal = rev;
@@ -312,12 +371,15 @@ function finishRound() {
   if (alive.length === 1) {
     G.phase = 'champion';
     G.championId = alive[0].id;
+    G.taunts.clear();
     dirty();
     return;
   }
   G.phase = 'roundEnd';
+  G.taunts.clear();
   if (G.type === 'duel') {
     G.cur += 1;
+    G.crowdVotes.clear();
   } else {
     // Lưu danh sách người còn lại để người F5 / kết nối lại vẫn nhận được
     G.lastSurvivors = { round: G.cur + 1, list: alive.map(p => [p.id, p.name, p.avatar, p.dept]) };
@@ -337,19 +399,44 @@ function scheduleBossNext() {
 
 // ---------- Dữ liệu gửi đi ----------
 const pubP = p => p && ({ id: p.id, name: p.name, dept: p.dept, avatar: p.avatar });
-const mini = id => { const p = id && players.get(id); return p ? { n: p.name, av: p.avatar, id: p.id, dp: p.dept } : null; };
+const mini = (id, fc) => {
+  const p = id && players.get(id);
+  if (!p) return null;
+  const o = { n: p.name, av: p.avatar, id: p.id, dp: p.dept };
+  if (fc) { o.fans = fc.cnt.get(p.id) || 0; o.wins = p.wins; }
+  return o;
+};
 
-function matchView(m, withHist = false) {
+function matchVotes(mi) {
+  const vm = G.crowdVotes.get(mi);
+  let a = 0, b = 0;
+  if (vm) for (const s of vm.values()) { if (s === 'a') a++; else if (s === 'b') b++; }
+  return { a, b };
+}
+
+function matchView(m, withHist = false, fc = null) {
   const live = !m.done && m.r === G.cur && (G.phase === 'choosing' || G.phase === 'suspense' || G.phase === 'reveal');
-  const v = { i: m.i, a: mini(m.a), b: mini(m.b), wa: m.wa, wb: m.wb, w: m.winner ? (m.winner === m.a ? 'a' : 'b') : null, done: m.done, live, bye: m.bye };
+  const v = {
+    i: m.i,
+    a: mini(m.a, withHist ? fc : null),
+    b: mini(m.b, withHist ? fc : null),
+    wa: m.wa, wb: m.wb,
+    w: m.winner ? (m.winner === m.a ? 'a' : 'b') : null,
+    done: m.done, live, bye: m.bye,
+  };
   if (G.phase === 'reveal' && m.r === G.cur && m.a && m.b) { v.ha = players.get(m.a).last?.my; v.hb = players.get(m.b).last?.my; }
-  if (withHist) v.hist = m.hist.slice(-12);
+  if (withHist) {
+    v.hist = m.hist.slice(-12);
+    v.votes = matchVotes(m.i);
+    v.tauntA = m.a ? (G.taunts.get(m.a)?.text || null) : null;
+    v.tauntB = m.b ? (G.taunts.get(m.b)?.text || null) : null;
+  }
   return v;
 }
-function roundView(r, from, count, withHist = false) {
+function roundView(r, from, count, withHist = false, fc = null) {
   const list = G.rounds[r].slice(from, from + count);
   const need = winsNeeded(r);
-  return { r, name: roundName(r), bo: boLabel(need), need, total: G.rounds[r].length, done: G.rounds[r].filter(m => m.done).length, from, matches: list.map(m => matchView(m, withHist)) };
+  return { r, name: roundName(r), bo: boLabel(need), need, total: G.rounds[r].length, done: G.rounds[r].filter(m => m.done).length, from, matches: list.map(m => matchView(m, withHist, fc)) };
 }
 
 // Sơ đồ nhỏ quanh vị trí của người chơi (tối đa 3 vòng, 4 trận đầu)
@@ -404,6 +491,60 @@ function fanClubs(roots) {
   return { cnt, top: [...cnt.entries()].filter(([id]) => id !== 'BOSS').sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, n]) => ({ who: pubP(players.get(id)), fans: n })) };
 }
 
+function buildFunAwards() {
+  const all = [...players.values()];
+  if (!all.length) return [];
+  const awards = [];
+  const handTitle = { rock: ['✊', 'Tín Đồ Búa', 'Búa'], paper: ['✋', 'Trùm Bao', 'Bao'], scissors: ['✌️', 'Sát Thủ Kéo', 'Kéo'] };
+
+  // 1. Phản xạ tia chớp (ưu tiên người thật có bấm tay)
+  const realFast = all.filter(p => !p.bot && p.reactCnt > 0);
+  const fastPool = realFast.length ? realFast : all.filter(p => p.reactCnt > 0);
+  if (fastPool.length) {
+    fastPool.sort((a, b) => (a.reactSum / a.reactCnt) - (b.reactSum / b.reactCnt) || b.reactCnt - a.reactCnt);
+    const p = fastPool[0];
+    const avg = (p.reactSum / p.reactCnt / 1000).toFixed(2);
+    awards.push({ icon: '⚡', title: 'Phản Xạ Tia Chớp', who: pubP(p), detail: `TB ${avg}s / lượt (${p.reactCnt} lượt)` });
+  }
+
+  // 2. Thánh Nhân Phẩm (đồng xu may mắn + lượt hòa thoát hiểm)
+  const lucky = all.filter(p => p.luckWins > 0 || p.tiesSurvived > 0)
+    .sort((a, b) => (b.luckWins * 3 + b.tiesSurvived) - (a.luckWins * 3 + a.tiesSurvived) || b.wins - a.wins);
+  if (lucky.length) {
+    const p = lucky[0];
+    const parts = [];
+    if (p.luckWins) parts.push(`${p.luckWins} đồng xu 🍀`);
+    if (p.tiesSurvived) parts.push(`${p.tiesSurvived} lượt hòa`);
+    awards.push({ icon: '🍀', title: 'Thánh Nhân Phẩm', who: pubP(p), detail: parts.join(' · ') });
+  }
+
+  // 3. Kẻ Kiên Định (trung thành với 1 chiêu nhất)
+  const loyal = all.filter(p => p.manualCount >= 2).map(p => {
+    let bestH = 'rock', bestC = 0;
+    for (const h of HANDS) if (p.manualHands[h] > bestC) { bestC = p.manualHands[h]; bestH = h; }
+    return { p, bestH, bestC, ratio: bestC / p.manualCount };
+  }).sort((a, b) => b.ratio - a.ratio || b.bestC - a.bestC || b.p.wins - a.p.wins);
+  if (loyal.length && loyal[0].bestC >= 2) {
+    const x = loyal[0];
+    const [ic, label, hName] = handTitle[x.bestH];
+    awards.push({ icon: ic, title: label, who: pubP(x.p), detail: `${Math.round(x.ratio * 100)}% ra ${hName} (${x.bestC}/${x.p.manualCount} lượt)` });
+  }
+
+  // 4. Vua Cổ Vũ (nếu có người cổ vũ nhiệt tình) hoặc Chiến Thần Đấu Trí (trận dài hơi nhất)
+  const cheerers = all.filter(p => p.cheersSent >= 2).sort((a, b) => b.cheersSent - a.cheersSent);
+  if (cheerers.length) {
+    const p = cheerers[0];
+    awards.push({ icon: '📣', title: 'Vua Cổ Vũ', who: pubP(p), detail: `${p.cheersSent} lượt tiếp lửa sân khấu` });
+  } else {
+    const marathon = all.filter(p => p.maxMatchGames >= 3).sort((a, b) => b.maxMatchGames - a.maxMatchGames || b.wins - a.wins);
+    if (marathon.length) {
+      const p = marathon[0];
+      awards.push({ icon: '🧠', title: 'Vua Đấu Trí', who: pubP(p), detail: `Thắng trận căng ${p.maxMatchGames} ván` });
+    }
+  }
+  return awards.slice(0, 4);
+}
+
 function buildPodium(fc) {
   if (G.phase !== 'champion' || !G.championId) return null;
   const champ = players.get(G.championId);
@@ -439,6 +580,7 @@ function buildPodium(fc) {
     thirds,
     topDepts: deptStats().slice(0, 5),
     topFans: fc.top.slice(0, 3),
+    awards: buildFunAwards(),
   };
 }
 
@@ -462,7 +604,7 @@ function hostState(cached) {
     const n = G.rounds[ci].length;
     let t0 = G.rounds.findIndex(r => r.length <= 8); if (t0 < 0) t0 = 0;
     bracket = {
-      cur: roundView(ci, 0, n, n <= 2),
+      cur: roundView(ci, 0, n, n <= 2, fc),
       tree: G.rounds.slice(t0).map((r, k) => roundView(t0 + k, 0, r.length)),
       treeMode: n <= 8,
       path: cached ? cached.tpath : tourPath(),
@@ -479,6 +621,7 @@ function hostState(cached) {
     total: all.length, alive: all.filter(p => p.alive).length, startCount: G.startCount,
     bots: all.filter(p => p.bot).length, max: CFG.MAX_PLAYERS, joinUrl: JOIN_URL,
     bossTieSurvives: CFG.BOSS_TIE_SURVIVES,
+    bossQuip: G.bossQuip,
     chosen, participants: G.participants.size,
     recent: all.slice(-80).reverse().map(p => ({ id: p.id, name: p.name, avatar: p.avatar, dept: p.dept, bot: p.bot })),
     depts: deptStats().slice(0, 8),
@@ -495,6 +638,7 @@ function playerState(p, shared) {
   const { roots, fc, aliveCount, tpath, roundProgress, now } = shared;
   let role = 'idle', opponent = null, score = null;
   const inStep = G.participants.has(p.id);
+  const isSpotlightRound = G.type === 'duel' && G.rounds[G.cur] && G.rounds[G.cur].length <= 2 && G.phase !== 'lobby' && G.phase !== 'champion';
   if (G.type === 'duel' && p.path.length) {
     const r = p.path.length - 1, m = G.rounds[r][p.path[r]];
     const isA = m.a === p.id;
@@ -517,14 +661,36 @@ function playerState(p, shared) {
   const idol = !p.alive && root && root !== 'BOSS' ? pubP(players.get(root)) : null;
   const killer = !p.alive && p.fanOf ? (p.fanOf === 'BOSS' ? { name: 'BOSS', avatar: '🤖' } : pubP(players.get(p.fanOf))) : null;
   const showLast = G.phase === 'reveal' || ((G.phase === 'choosing' || G.phase === 'suspense') && G.step > 0 && inStep);
+
+  let spotlight = null;
+  if (isSpotlightRound && !inStep) {
+    spotlight = G.rounds[G.cur].filter(m => m.a && m.b).map(m => ({
+      i: m.i,
+      a: mini(m.a, fc),
+      b: mini(m.b, fc),
+      wa: m.wa, wb: m.wb, done: m.done, w: m.winner ? (m.winner === m.a ? 'a' : 'b') : null,
+      votes: matchVotes(m.i),
+      myVote: G.crowdVotes.get(m.i)?.get(p.id) || null,
+      tauntA: G.taunts.get(m.a)?.text || null,
+      tauntB: G.taunts.get(m.b)?.text || null,
+    }));
+  }
+  const canTaunt = isSpotlightRound && inStep && G.phase === 'choosing';
+  const myTaunt = G.taunts.get(p.id)?.text || null;
+  const oppTaunt = opponent ? (G.taunts.get(opponent.id)?.text || null) : null;
+
   return {
     me: { id: p.id, name: p.name, dept: p.dept, avatar: p.avatar, alive: p.alive, wins: p.wins },
     phase: G.phase, type: G.type, locked: G.locked, roundLabel: roundLabel(), roundNo: G.cur + 1, step: G.step,
     deadline: G.deadline, stepMs: G.stepMs, suspenseEnds: G.suspenseEnds, suspenseMs: CFG.SUSPENSE_MS, serverNow: now, nextAt: G.nextAt,
     bossTieSurvives: CFG.BOSS_TIE_SURVIVES,
+    bossQuip: G.type === 'boss' ? G.bossQuip : '',
     inStep, byeR1: G.type === 'duel' && p.path[0] !== undefined && G.rounds[0][p.path[0]].bye,
     role, canChoose: G.phase === 'choosing' && inStep && !p.choice, choice: inStep ? p.choice : null,
     opponent, score,
+    canTaunt, taunts: canTaunt ? TAUNTS : null, myTaunt, oppTaunt,
+    spotlight,
+    canCheer: G.phase !== 'lobby' && (!inStep || G.phase === 'roundEnd' || G.phase === 'ready' || G.phase === 'champion'),
     last: showLast ? p.last : (G.phase === 'roundEnd' || G.phase === 'champion' ? p.last : null),
     bossHand: G.phase === 'reveal' ? G.bossHand : null,
     killer, idol, myFans: fc.cnt.get(p.id) || 0,
@@ -596,6 +762,15 @@ setInterval(() => {
   }
 }, 150);
 
+// Gom cổ vũ từ tối đa 500 người chơi, phát theo nhịp 200ms để màn hình LED không giật
+let cheerQueue = [];
+setInterval(() => {
+  if (!cheerQueue.length) return;
+  const batch = cheerQueue.slice(0, 28);
+  cheerQueue = [];
+  io.to('hosts').emit('cheers', batch);
+}, 200);
+
 // ---------- Socket ----------
 const AVATARS = ['🦊', '🐼', '🐯', '🐸', '🐵', '🦁', '🐨', '🐷', '🐙', '🦄', '🐝', '🐲', '🦖', '🐧', '🦉', '🐳'];
 const BOT_NAMES = ['Tí', 'Tèo', 'Bé Na', 'Su', 'Bin', 'Mít', 'Bơ', 'Cốm', 'Na', 'Xoài', 'Đậu', 'Bông', 'Sóc', 'Bắp', 'Kem', 'Mochi'];
@@ -603,6 +778,8 @@ const BOT_NAMES = ['Tí', 'Tèo', 'Bé Na', 'Su', 'Bin', 'Mít', 'Bơ', 'Cốm',
 io.on('connection', socket => {
   let pid = null;
   let isHost = false;
+  let lastCheerAt = 0;
+  let lastTauntAt = 0;
 
   socket.on('join', (data, ack) => {
     if (typeof ack !== 'function') ack = () => {};
@@ -640,10 +817,63 @@ io.on('connection', socket => {
     const p = players.get(pid);
     if (!p || !G.participants.has(pid)) return ack({ ok: false, error: 'Bạn không thi đấu lượt này' });
     if (p.choice) return ack({ ok: true, hand: p.choice });
-    p.choice = hand; p.choiceAt = Date.now();
+    const now = Date.now();
+    p.choice = hand; p.choiceAt = now;
+    if (G.stepStartAt > 0) {
+      p.reactSum += Math.max(50, Math.min(now - G.stepStartAt, G.stepMs || 15000));
+      p.reactCnt += 1;
+    }
     dirtyOne(pid);
     ack({ ok: true, hand });
     maybeEarlyResolve();
+  });
+
+  // Khán giả thả cảm xúc bay lên màn hình LED (throttle 400ms/người)
+  socket.on('cheer', (data) => {
+    if (!pid || G.phase === 'lobby') return;
+    const now = Date.now();
+    if (now - lastCheerAt < 400) return;
+    lastCheerAt = now;
+    const p = players.get(pid);
+    if (!p) return;
+    const emoji = typeof data === 'string' ? data : data?.emoji;
+    if (!CHEERS.includes(emoji)) return;
+    const side = (data && (data.side === 'a' || data.side === 'b')) ? data.side : null;
+    p.cheersSent++;
+    if (cheerQueue.length < 40) cheerQueue.push({ e: emoji, side, av: p.avatar });
+  });
+
+  // Khán giả bình chọn phe ở Bán kết / Chung kết
+  socket.on('vote', (data, ack) => {
+    if (typeof ack !== 'function') ack = () => {};
+    if (!pid || G.type !== 'duel' || !G.rounds[G.cur] || G.rounds[G.cur].length > 2) return ack({ ok: false });
+    if (G.phase === 'lobby' || G.phase === 'champion') return ack({ ok: false });
+    if (G.participants.has(pid)) return ack({ ok: false });
+    const mi = Number(data?.matchIdx);
+    const side = data?.side;
+    const m = G.rounds[G.cur][mi];
+    if (!m || m.done || (side !== 'a' && side !== 'b')) return ack({ ok: false });
+    if (!G.crowdVotes.has(mi)) G.crowdVotes.set(mi, new Map());
+    G.crowdVotes.get(mi).set(pid, side);
+    const p = players.get(pid);
+    if (p && cheerQueue.length < 40) cheerQueue.push({ e: side === 'a' ? '💙' : '❤️', side, av: p.avatar });
+    dirty();
+    ack({ ok: true, votes: matchVotes(mi) });
+  });
+
+  // Đấu thủ Bán kết / Chung kết tung hỏa mù tâm lý (preset an toàn)
+  socket.on('taunt', (idx, ack) => {
+    if (typeof ack !== 'function') ack = () => {};
+    if (!pid || G.type !== 'duel' || G.phase !== 'choosing' || !G.rounds[G.cur] || G.rounds[G.cur].length > 2) return ack({ ok: false });
+    if (!G.participants.has(pid)) return ack({ ok: false });
+    const now = Date.now();
+    if (now - lastTauntAt < 1200) return ack({ ok: false });
+    const i = Number(idx);
+    if (!Number.isInteger(i) || i < 0 || i >= TAUNTS.length) return ack({ ok: false });
+    lastTauntAt = now;
+    G.taunts.set(pid, { text: TAUNTS[i], at: now });
+    dirty();
+    ack({ ok: true, text: TAUNTS[i] });
   });
 
   socket.on('leave', () => {

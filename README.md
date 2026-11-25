@@ -4,6 +4,7 @@ Game oẳn tù tì cho tối đa **500 người** cùng chơi bằng điện tho
 
 - **Màn hình lớn (MC / máy chiếu):** `http://<máy-chủ>:3000/host`
 - **Người chơi:** quét mã QR hiện trên màn hình lớn
+- **Slide thuyết trình BTC:** `http://<máy-chủ>:3000/slides`
 
 ---
 
@@ -67,13 +68,14 @@ Luật chung cho cả 2 chế độ:
 6. **Sơ đồ thi đấu kiểu giải bóng đá:**
    - **Màn hình lớn:** từ vòng 1/8 trở đi hiện sơ đồ hai nhánh đối xứng (trái và phải) hội tụ về Chung Kết ở giữa, có đường nối giữa các trận. Đường nối và ô tỉ số sáng vàng theo người thắng. Các vòng đông người hơn (vòng 1, 2, 1/16…) hiện dạng bảng tất cả các cặp. MC bấm **🗺️ Sơ đồ nhánh** (hoặc phím **S**) để mở sơ đồ bất kỳ lúc nào.
    - **Điện thoại:** người chơi thấy nhánh của mình (tối đa 4 vòng, có cột Vô địch ở cuối), vuốt ngang để xem các vòng sau. Thanh lộ trình phía trên đánh dấu vòng đã qua ✓ và vòng bị loại ✗. Người đã bị loại tự động theo dõi nhánh của thần tượng mình.
-7. **Fan club:** bị loại thì bạn thành fan của người đã hạ mình. Thần tượng thua thì cả fan club chuyển sang người thắng. Cuối cùng, toàn bộ người bị loại sẽ thuộc fan club của nhà vô địch.
+7. **Fan club & Khán đài tương tác:** bị loại thì bạn thành fan của người đã hạ mình, có thể bấm thả cảm xúc (`🔥 👏 😱 ⚡ ❤️`) bay trực tiếp lên màn hình lớn và **bình chọn kéo co** ở Bán kết/Chung kết. Đấu thủ Bán kết/Chung kết còn có thể bấm **tung hỏa mù tâm lý** hiện bong bóng thoại ngay trên màn hình LED.
+8. **Bục vinh danh & Danh hiệu đặc biệt:** cuối giải hiển thị Top 1–2–3, BXH BU và tự động tính đến 4 danh hiệu vui (⚡ Phản Xạ Tia Chớp, 🍀 Thánh Nhân Phẩm, ✊/✋/✌️ Kẻ Kiên Định, 📣 Vua Cổ Vũ / 🧠 Vua Đấu Trí).
 
 Với 500 người, giải có 9 vòng: Vòng 1 → Vòng 2 → Vòng 3 → Vòng 4 → Vòng 1/16 → Vòng 1/8 → Tứ kết → Bán kết (BO3) → Chung kết (BO5). Mỗi vòng đầu mất khoảng 15–30 giây cộng thời gian MC dẫn.
 
 ### 🤖 Chế độ Đại Chiến Boss
 
-1. Mỗi vòng, **tất cả người còn lại cùng đấu với Boss** (Boss ra tay ngẫu nhiên).
+1. Mỗi vòng, **tất cả người còn lại cùng đấu với Boss** (Boss có câu thoại khiêu khích, tung hỏa mù và phản ứng theo kết quả từng vòng).
 2. Thắng Boss hoặc hòa Boss thì sống, thua Boss thì bị loại. Nếu muốn hòa cũng bị loại, đặt `BOSS_TIE_SURVIVES=false`.
 3. Nếu **tất cả** cùng thua, Boss "tha mạng" và vòng đó đấu lại, nên không bao giờ hết người.
 4. Sau mỗi vòng, cả màn hình lớn lẫn điện thoại hiển thị **danh sách người còn lại**. Màn lớn tự cuộn nếu danh sách dài, kèm diễn biến số người qua từng vòng.
